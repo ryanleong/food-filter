@@ -11,7 +11,7 @@
 | # | Epic | Description |
 |---|------|-------------|
 | E1 | Project Scaffold & Cleanup (Completed) | Remove auth, configure PWA foundation |
-| E2 | Core Infrastructure | Types, storage helpers, image utility, API proxy |
+| E2 | Core Infrastructure (Completed) | Types, storage helpers, image utility, API proxy |
 | E3 | Ingredient Blacklist | Manage ingredients UI and persistence |
 | E4 | Menu Scanning | Camera/upload UI and image submission |
 | E5 | AI Analysis | Gemini Vision integration and prompt engineering |
@@ -86,9 +86,11 @@
 
 ---
 
-## E2 — Core Infrastructure
+## E2 — Core Infrastructure (Completed)
 
 **Goal:** Establish the shared types, utilities, and server-side proxy that all features depend on.
+
+**Status:** Completed (April 26, 2026)
 
 ---
 
