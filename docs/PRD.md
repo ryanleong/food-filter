@@ -8,7 +8,7 @@
 
 ## 1. Overview
 
-FoodFilter is a Progressive Web App (PWA) that helps users avoid unwanted food ingredients when dining out. Users maintain a personal blacklist of ingredients they want to avoid. They can photograph a restaurant menu, and the app uses Google Gemini Vision AI to identify which dishes likely contain blacklisted ingredients — along with a probability rating and a breakdown of other detected ingredients.
+FoodFilter is a Progressive Web App (PWA) that helps users avoid unwanted food ingredients when dining out. Users maintain a personal blacklist of ingredients they want to avoid. They can photograph a restaurant menu, and the app uses Google Gemini 3.1 Flash-lite to identify which dishes likely contain blacklisted ingredients — along with a probability rating and a breakdown of other detected ingredients.
 
 ---
 
@@ -64,13 +64,13 @@ A diner (allergy sufferer, dietary-restricted individual, or preference-driven e
 - Users can submit a menu image via:
   - **Camera capture** — triggers native device camera (primary mobile UX)
   - **File upload** — select an image from the device gallery or filesystem
-- Image is sent to the **Google Gemini Vision API** for analysis
+- Image is sent to the **Google Gemini 3.1 Flash-lite API** for analysis
 - The image is **not** stored anywhere (client or server)
 - The app must communicate clearly when network is unavailable (analysis blocked)
 
 ### 4.3 AI Analysis
 
-The Gemini Vision model must:
+The Gemini 3.1 Flash-lite model must:
 
 1. **Extract all dishes** visible in the submitted menu photo
 2. For each dish, **identify its ingredients** using:
@@ -154,10 +154,10 @@ The Gemini Vision model must:
 |-------|-----------|
 | Framework | Next.js (App Router) |
 | Styling | Tailwind CSS + shadcn/ui |
-| AI | Google Gemini Vision API (via server-side API route) |
+| AI | Google Gemini 3.1 Flash-lite (via server-side API route) |
 | Storage | Browser `localStorage` |
 | PWA | `next-pwa` or custom service worker |
-| Hosting | TBD (Vercel recommended) |
+| Hosting | Vercel |
 
 ### Key Modules
 
@@ -193,7 +193,7 @@ All Supabase authentication routes, components, and middleware will be removed. 
 
 ## 7. Gemini Prompt Design (Outline)
 
-The API route will send a structured system + user prompt to Gemini:
+The API route will send a structured system + user prompt to Gemini 3.1 Flash-lite:
 
 - **System context:** Explain it is a food safety assistant; define the output format (JSON)
 - **User message:** Include the base64-encoded menu image + the user's blacklist of ingredients
