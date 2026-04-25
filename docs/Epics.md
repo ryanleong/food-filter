@@ -10,7 +10,7 @@
 
 | # | Epic | Description |
 |---|------|-------------|
-| E1 | Project Scaffold & Cleanup | Remove auth, configure PWA foundation |
+| E1 | Project Scaffold & Cleanup (Completed) | Remove auth, configure PWA foundation |
 | E2 | Core Infrastructure | Types, storage helpers, image utility, API proxy |
 | E3 | Ingredient Blacklist | Manage ingredients UI and persistence |
 | E4 | Menu Scanning | Camera/upload UI and image submission |
@@ -23,13 +23,15 @@
 
 ---
 
-## E1 — Project Scaffold & Cleanup
+## E1 — Project Scaffold & Cleanup (Completed)
 
 **Goal:** Transform the Next.js + Supabase auth scaffold into a clean base for FoodFilter with no auth concerns.
 
+**Status:** Completed (April 25, 2026)
+
 ---
 
-### E1-S1 — Remove Supabase Authentication
+### E1-S1 — Remove Supabase Authentication (Completed)
 
 **As a developer,** I want all authentication-related code removed so the codebase only contains what FoodFilter needs.
 
@@ -58,7 +60,7 @@
 
 ---
 
-### E1-S2 — Update Environment Variable Configuration
+### E1-S2 — Update Environment Variable Configuration (Completed)
 
 **As a developer,** I want a clearly documented `.env.local.example` file reflecting only the variables FoodFilter needs.
 
@@ -72,7 +74,7 @@
 
 ---
 
-### E1-S3 — Clean Up `package.json` Dependencies
+### E1-S3 — Clean Up `package.json` Dependencies (Completed)
 
 **As a developer,** I want unused dependencies removed to keep the bundle lean.
 
