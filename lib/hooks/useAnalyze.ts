@@ -63,7 +63,7 @@ export function useAnalyze(): UseAnalyzeReturn {
       // Step 4: Build and persist the scan record
       const record: ScanRecord = {
         id: crypto.randomUUID(),
-        timestamp: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
         dishes: json.dishes,
         blacklistSnapshot: [...blacklist],
       };

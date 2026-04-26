@@ -12,7 +12,7 @@ import type { ScanRecord } from '../../lib/types';
 // Helper to create a minimal valid ScanRecord
 const makeScanRecord = (id: string): ScanRecord => ({
   id,
-  timestamp: '2026-04-25T10:00:00.000Z',
+  createdAt: '2026-04-25T10:00:00.000Z',
   dishes: [],
   blacklistSnapshot: [],
 });

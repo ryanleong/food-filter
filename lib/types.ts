@@ -19,7 +19,7 @@ export interface DishResult {
 // A complete scan result stored in history (no image data)
 export interface ScanRecord {
   id: string;                    // UUIDv4
-  timestamp: string;             // ISO 8601
+  createdAt: string;             // ISO 8601
   dishes: DishResult[];
   blacklistSnapshot: Ingredient[]; // copy of the blacklist at time of scan
 }

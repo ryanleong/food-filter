@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ScanRecord } from '@/lib/types';
+import { isScanRecord } from '@/lib/scan-records';
 
 export const SESSION_KEY = 'foodfilter_current_scan';
 
@@ -32,26 +33,12 @@ export function useResults(): UseResultsReturn {
       return;
     }
 
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null
-    ) {
+    if (!isScanRecord(parsed)) {
       router.push('/scan');
       return;
     }
 
-    const obj = parsed as Record<string, unknown>;
-
-    if (
-      !Array.isArray(obj.dishes) ||
-      typeof obj.id !== 'string' ||
-      !Array.isArray(obj.blacklistSnapshot)
-    ) {
-      router.push('/scan');
-      return;
-    }
-
-    setRecord(parsed as ScanRecord);
+    setRecord(parsed);
     setLoaded(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

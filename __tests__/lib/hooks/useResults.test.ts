@@ -11,7 +11,7 @@ vi.mock('next/navigation', () => ({
 
 const VALID_RECORD: ScanRecord = {
   id: 'abc-123',
-  timestamp: '2026-04-26T12:00:00.000Z',
+  createdAt: '2026-04-26T12:00:00.000Z',
   dishes: [
     {
       name: 'Pad Thai',
@@ -56,7 +56,7 @@ describe('useResults', () => {
   });
 
   it('redirects to /scan when the parsed object has no dishes field', async () => {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: 'abc', timestamp: '2026-01-01' }));
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: 'abc', createdAt: '2026-01-01' }));
     renderHook(() => useResults());
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/scan'));
   });
@@ -75,6 +75,15 @@ describe('useResults', () => {
 
   it('redirects to /scan when blacklistSnapshot is not an array', async () => {
     sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: 'abc', dishes: [], blacklistSnapshot: 'bad' }));
+    renderHook(() => useResults());
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/scan'));
+  });
+
+  it('redirects to /scan when createdAt is missing', async () => {
+    sessionStorage.setItem(
+      SESSION_KEY,
+      JSON.stringify({ id: 'abc', dishes: [], blacklistSnapshot: [] })
+    );
     renderHook(() => useResults());
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/scan'));
   });

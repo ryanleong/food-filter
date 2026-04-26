@@ -506,13 +506,15 @@ export interface ScanRecord {
 
 ---
 
-## E7 — Scan History
+## E7 — Scan History (Completed)
 
 **Goal:** Let users browse and review their past scan results.
 
+**Status:** Completed (April 26, 2026)
+
 ---
 
-### E7-S1 — History Page & Route
+### E7-S1 — History Page & Route (Completed)
 
 **As a user,** I want a `/history` page listing all my previous scans so I can refer back to them.
 
@@ -529,7 +531,7 @@ export interface ScanRecord {
 
 ---
 
-### E7-S2 — History Detail Page
+### E7-S2 — History Detail Page (Completed)
 
 **As a user,** I want to tap a history entry and see the full results for that scan.
 
@@ -543,7 +545,7 @@ export interface ScanRecord {
 
 ---
 
-### E7-S3 — Delete History Entry
+### E7-S3 — Delete History Entry (Completed)
 
 **As a user,** I want to delete individual history entries to manage my storage.
 
@@ -554,7 +556,7 @@ export interface ScanRecord {
 
 ---
 
-### E7-S4 — Clear All History
+### E7-S4 — Clear All History (Completed)
 
 **As a user,** I want to clear my entire scan history at once.
 

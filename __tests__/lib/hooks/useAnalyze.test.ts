@@ -125,7 +125,7 @@ describe('useAnalyze', () => {
     const savedRecord = mockAddScanRecord.mock.calls[0][0];
     expect(savedRecord).toEqual({
       id: FIXED_UUID,
-      timestamp: FIXED_ISO,
+      createdAt: FIXED_ISO,
       dishes: DISHES,
       blacklistSnapshot: ['peanuts'],
     });
