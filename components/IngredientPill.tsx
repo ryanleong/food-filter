@@ -16,12 +16,12 @@ export function IngredientPill({ name, onRemove }: IngredientPillProps) {
         'transition-colors hover:bg-muted/80',
       )}
     >
-      {name}
+      <span className="break-words">{name}</span>
       <button
         type="button"
         aria-label={`Remove ${name}`}
         onClick={() => onRemove(name)}
-        className="flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        className="flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring p-[15px] -m-[15px]"
       >
         <X size={14} />
       </button>

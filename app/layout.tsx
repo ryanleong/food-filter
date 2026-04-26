@@ -6,6 +6,7 @@ import './globals.css';
 import TopBar from '@/components/TopBar';
 import BottomNav from '@/components/BottomNav';
 import { BlacklistProvider } from '@/app/providers';
+import { StorageBanner } from '@/components/StorageBanner';
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -47,6 +48,7 @@ export default function RootLayout({
         >
           <TopBar />
           <BlacklistProvider>
+            <StorageBanner />
             <main className="pb-16">
               {children}
             </main>

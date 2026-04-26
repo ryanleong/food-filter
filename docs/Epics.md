@@ -17,8 +17,8 @@
 | E5 | AI Analysis (Completed) | Gemini Vision integration and prompt engineering |
 | E6 | Results Display (Completed) | Dish cards, risk badges, ingredient breakdown |
 | E7 | Scan History | Save, view, and delete past scan results |
-| E8 | PWA Configuration | Manifest, service worker, installability |
-| E9 | Navigation & Shell | App layout, routing, bottom nav |
+| E8 | PWA Configuration (Completed) | Manifest, service worker, installability |
+| E9 | Navigation & Shell (Completed) | App layout, routing, bottom nav |
 | E10 | Quality & Polish | Accessibility, error states, loading states, performance |
 
 ---
@@ -568,9 +568,11 @@ export interface ScanRecord {
 
 ---
 
-## E8 — PWA Configuration
+## E8 — PWA Configuration (Completed)
 
 **Goal:** Make FoodFilter installable as a PWA on mobile and desktop.
+
+**Status:** Completed (April 27, 2026)
 
 ---
 
@@ -643,9 +645,11 @@ export interface ScanRecord {
 
 ---
 
-## E9 — Navigation & App Shell
+## E9 — Navigation & App Shell (Completed)
 
 **Goal:** Provide a consistent, mobile-first navigation shell across all pages.
+
+**Status:** Completed (April 27, 2026)
 
 ---
 

@@ -114,4 +114,49 @@ describe('compressImage', () => {
     expect(result).toBeInstanceOf(Blob);
     expect(callCount).toBeGreaterThan(1); // Confirmed looping happened
   });
+
+  it('preserves aspect ratio when resizing across multiple iterations', async () => {
+    // Use a 400×200 image (2:1 ratio) and always return an oversized blob
+    // so the loop runs at least twice before the floor stops it.
+    vi.stubGlobal(
+      'Image',
+      class MockImageWide {
+        naturalWidth = 400;
+        naturalHeight = 200;
+        onload: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        set src(_val: string) {
+          Promise.resolve().then(() => this.onload?.());
+        }
+        get src() { return ''; }
+      }
+    );
+
+    // Always return a blob larger than maxSizeKB so the loop keeps shrinking
+    vi.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation(
+      (callback: BlobCallback) => {
+        callback(new Blob([new Uint8Array(2 * 1024 * 1024)], { type: 'image/jpeg' }));
+      }
+    );
+
+    // Capture every drawImage(img, 0, 0, width, height) call
+    const drawImageCalls: Array<{ width: number; height: number }> = [];
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      drawImage: (_img: unknown, _x: unknown, _y: unknown, width: number, height: number) => {
+        drawImageCalls.push({ width, height });
+      },
+    } as unknown as CanvasRenderingContext2D);
+
+    const file = new File(['data'], 'wide.jpg', { type: 'image/jpeg' });
+    // maxSizeKB = 1 KB — blob is always 2 MB, so loop runs until floor
+    await compressImage(file, 1);
+
+    // Must have looped at least twice
+    expect(drawImageCalls.length).toBeGreaterThanOrEqual(2);
+
+    // Every call must maintain the original 2:1 aspect ratio (±0.1 tolerance for rounding)
+    for (const { width, height } of drawImageCalls) {
+      expect(width / height).toBeCloseTo(2, 1);
+    }
+  });
 });

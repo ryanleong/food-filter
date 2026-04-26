@@ -26,14 +26,14 @@ export function DishCard({ dish }: DishCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-semibold">{name}</CardTitle>
+        <CardTitle className="text-base font-semibold break-words">{name}</CardTitle>
         <RiskBadge level={riskLevel} />
       </CardHeader>
       <CardContent className="space-y-2">
         {showBlacklisted && (
           <p
             className={cn(
-              'text-sm font-medium',
+              'text-sm font-medium break-words',
               riskLevel === 'high'
                 ? 'text-red-600 dark:text-red-400'
                 : 'text-amber-600 dark:text-amber-400',
@@ -45,7 +45,7 @@ export function DishCard({ dish }: DishCardProps) {
 
         {expanded && (
           <div id={expandableId}>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground break-words">
               {allIngredients.join(', ')}
             </p>
             <p className="mt-2 text-xs text-muted-foreground">

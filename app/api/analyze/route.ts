@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { analyzeMenu } from '@/lib/gemini';
 
 export async function POST(request: Request) {
+  // --- Validate Content-Type ---
+  const contentType = request.headers.get('content-type') ?? '';
+  if (!contentType.includes('multipart/form-data')) {
+    return NextResponse.json({ error: 'Unsupported Media Type' }, { status: 415 });
+  }
+
   // --- Parse FormData ---
   let formData: FormData;
   try {

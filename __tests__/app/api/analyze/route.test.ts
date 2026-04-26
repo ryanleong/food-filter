@@ -42,6 +42,18 @@ describe('POST /api/analyze', () => {
 
   // --- 400 validation ---
 
+  it('returns 415 when Content-Type is not multipart/form-data', async () => {
+    const request = new Request('http://localhost/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    const response = await POST(request);
+    expect(response.status).toBe(415);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Unsupported Media Type' });
+  });
+
   it('returns 400 with descriptive error when image field is missing', async () => {
     const req = makeRequest({ blacklist: '[]' });
     const res = await POST(req);
