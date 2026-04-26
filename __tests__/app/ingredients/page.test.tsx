@@ -79,10 +79,10 @@ describe('IngredientsPage', () => {
     expect(screen.getByText('1 ingredient')).toBeInTheDocument();
   });
 
-  it('pre-populates with existing blacklist from storage', () => {
+  it('pre-populates with existing blacklist from storage', async () => {
     mockGetBlacklist.mockReturnValue(['dairy', 'eggs']);
     renderPage();
-    expect(screen.getByText('dairy')).toBeInTheDocument();
-    expect(screen.getByText('eggs')).toBeInTheDocument();
+    expect(await screen.findByText('dairy')).toBeInTheDocument();
+    expect(await screen.findByText('eggs')).toBeInTheDocument();
   });
 });

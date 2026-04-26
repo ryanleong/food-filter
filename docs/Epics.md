@@ -13,7 +13,7 @@
 | E1 | Project Scaffold & Cleanup (Completed) | Remove auth, configure PWA foundation |
 | E2 | Core Infrastructure (Completed) | Types, storage helpers, image utility, API proxy |
 | E3 | Ingredient Blacklist (Completed) | Manage ingredients UI and persistence |
-| E4 | Menu Scanning | Camera/upload UI and image submission |
+| E4 | Menu Scanning (Completed) | Camera/upload UI and image submission |
 | E5 | AI Analysis | Gemini Vision integration and prompt engineering |
 | E6 | Results Display | Dish cards, risk badges, ingredient breakdown |
 | E7 | Scan History | Save, view, and delete past scan results |
@@ -278,9 +278,11 @@ export interface ScanRecord {
 
 ---
 
-## E4 — Menu Scanning
+## E4 — Menu Scanning (Completed)
 
 **Goal:** Let users submit a menu image from their camera or file system.
+
+**Status:** Completed (April 26, 2026)
 
 ---
 

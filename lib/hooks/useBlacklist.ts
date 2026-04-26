@@ -10,12 +10,19 @@ export interface UseBlacklistReturn {
 }
 
 export function useBlacklist(): UseBlacklistReturn {
-  const [items, setItems] = useState<string[]>(() => getBlacklist());
+  const [items, setItems] = useState<string[]>([]);
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setItems(getBlacklist());
+    setHasHydrated(true);
+  }, []);
 
   // Sync to localStorage whenever items change (pure updater pattern — no side effects in setItems)
   useEffect(() => {
+    if (!hasHydrated) return;
     saveBlacklist(items);
-  }, [items]);
+  }, [hasHydrated, items]);
 
   function add(raw: string): void {
     const normalized = raw.trim().toLowerCase();
