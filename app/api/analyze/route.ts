@@ -64,9 +64,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ dishes });
   } catch (err) {
     const message = err instanceof Error ? err.message : '';
+    // The @google/genai SDK throws ApiError objects with a numeric .status property
+    const geminiStatus = (err as { status?: number }).status;
 
     if (message === 'GEMINI_API_KEY not set') {
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    if (geminiStatus === 429) {
+      return NextResponse.json(
+        { error: 'AI service quota exceeded. Please wait a moment and try again.' },
+        { status: 503 },
+      );
     }
 
     return NextResponse.json(

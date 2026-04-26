@@ -10,6 +10,15 @@ vi.mock('@/lib/storage', () => ({
   saveBlacklist: vi.fn(),
 }));
 
+vi.mock('@/lib/hooks/useAnalyze', () => ({
+  useAnalyze: () => ({
+    status: 'idle',
+    error: null,
+    analyze: vi.fn(),
+    reset: vi.fn(),
+  }),
+}));
+
 const mockGetBlacklist = vi.mocked(storage.getBlacklist);
 
 function renderPage() {
@@ -84,12 +93,10 @@ describe('ScanPage', () => {
     expect(screen.getByText(/no image selected/i)).toBeInTheDocument();
   });
 
-  it('shows a validation error when analyze is clicked without an image', async () => {
+  it('disables the Analyze Menu button when no image is selected', () => {
     renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: /analyze menu/i }));
-
-    expect(screen.getByText(/select a menu image before analyzing/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /analyze menu/i })).toBeDisabled();
   });
 
   it('shows a dismissible offline alert instead of proceeding when offline', async () => {

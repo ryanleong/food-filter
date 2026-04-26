@@ -14,7 +14,7 @@
 | E2 | Core Infrastructure (Completed) | Types, storage helpers, image utility, API proxy |
 | E3 | Ingredient Blacklist (Completed) | Manage ingredients UI and persistence |
 | E4 | Menu Scanning (Completed) | Camera/upload UI and image submission |
-| E5 | AI Analysis | Gemini Vision integration and prompt engineering |
+| E5 | AI Analysis (Completed) | Gemini Vision integration and prompt engineering |
 | E6 | Results Display | Dish cards, risk badges, ingredient breakdown |
 | E7 | Scan History | Save, view, and delete past scan results |
 | E8 | PWA Configuration | Manifest, service worker, installability |
@@ -344,9 +344,11 @@ export interface ScanRecord {
 
 ---
 
-## E5 — AI Analysis
+## E5 — AI Analysis (Completed)
 
 **Goal:** Submit the image and blacklist to Gemini via the server proxy and return structured dish results.
+
+**Status:** Completed (April 26, 2026)
 
 ---
 

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { Camera, ImageUp, TriangleAlert, X } from 'lucide-react';
+import { Camera, ImageUp, Loader2, TriangleAlert, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useBlacklistContext } from '@/app/providers';
+import { useAnalyze } from '@/lib/hooks/useAnalyze';
 
 function createPreviewUrl(file: File): string {
   return URL.createObjectURL(file);
@@ -25,6 +26,8 @@ export function ScanInput() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [isOfflineAlertVisible, setIsOfflineAlertVisible] = useState(false);
+  const { status, error: analyzeError, analyze, reset: resetAnalyze } = useAnalyze();
+  const [showSlowWarning, setShowSlowWarning] = useState(false);
 
   useEffect(() => {
     if (typeof navigator === 'undefined') {
@@ -52,6 +55,16 @@ export function ScanInput() {
       }
     };
   }, [previewUrl]);
+
+  useEffect(() => {
+    if (status !== 'loading') {
+      setShowSlowWarning(false);
+      return undefined;
+    }
+
+    const timer = setTimeout(() => setShowSlowWarning(true), 15_000);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   function updateSelectedFile(file: File | null) {
     setValidationError(null);
@@ -96,6 +109,8 @@ export function ScanInput() {
       setIsOfflineAlertVisible(true);
       return;
     }
+
+    analyze(selectedFile, items);
   }
 
   return (
@@ -146,6 +161,24 @@ export function ScanInput() {
         </div>
       ) : null}
 
+      {analyzeError ? (
+        <div
+          className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          role="alert"
+        >
+          <p>{analyzeError}</p>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={resetAnalyze}
+            className="self-start"
+          >
+            Try Again
+          </Button>
+        </div>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Choose a menu image</CardTitle>
@@ -154,85 +187,105 @@ export function ScanInput() {
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-6">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <input
-              ref={cameraInputRef}
-              id="camera-image-input"
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileChange}
-              className="sr-only"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 justify-start"
-              onClick={() => cameraInputRef.current?.click()}
-            >
-              <Camera aria-hidden="true" />
-              Take Photo
-            </Button>
-
-            <input
-              ref={uploadInputRef}
-              id="upload-image-input"
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="sr-only"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="h-12 justify-start"
-              onClick={() => uploadInputRef.current?.click()}
-            >
-              <ImageUp aria-hidden="true" />
-              Upload Image
-            </Button>
-          </div>
-
-          <div className="rounded-xl border border-dashed bg-muted/30 p-4">
-            {previewUrl ? (
-              <div className="flex flex-col gap-4">
-                <div className="overflow-hidden rounded-lg border bg-background">
-                  <img
-                    src={previewUrl}
-                    alt="Selected menu preview"
-                    className="max-h-[300px] w-full object-contain"
-                  />
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
-                  <Button type="button" variant="secondary" onClick={clearSelection}>
-                    Clear
-                  </Button>
-                </div>
+          {/* aria-live region must be statically present for screen readers to track changes */}
+          <div aria-live="polite" aria-atomic="true">
+            {status === 'loading' ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-12 text-center text-muted-foreground">
+                <Loader2 className="size-8 animate-spin" aria-hidden="true" />
+                <p className="text-sm font-medium">Analyzing your menu…</p>
+                {showSlowWarning ? (
+                  <p className="text-xs">This is taking longer than usual…</p>
+                ) : null}
               </div>
-            ) : (
-              <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background/80 px-6 py-10 text-center">
-                <ImageUp className="size-8 text-muted-foreground" aria-hidden="true" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">No image selected</p>
-                  <p className="text-sm text-muted-foreground">
-                    Your menu preview will appear here after you take a photo or choose a file.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" onClick={handleAnalyze}>
-              Analyze Menu
-            </Button>
-            {selectedFile ? (
-              <Button type="button" variant="ghost" onClick={clearSelection}>
-                Change Image
-              </Button>
             ) : null}
           </div>
+          {status !== 'loading' ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input
+                  ref={cameraInputRef}
+                  id="camera-image-input"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleFileChange}
+                  className="sr-only"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 justify-start"
+                  onClick={() => cameraInputRef.current?.click()}
+                >
+                  <Camera aria-hidden="true" />
+                  Take Photo
+                </Button>
+
+                <input
+                  ref={uploadInputRef}
+                  id="upload-image-input"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="sr-only"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 justify-start"
+                  onClick={() => uploadInputRef.current?.click()}
+                >
+                  <ImageUp aria-hidden="true" />
+                  Upload Image
+                </Button>
+              </div>
+
+              <div className="rounded-xl border border-dashed bg-muted/30 p-4">
+                {previewUrl ? (
+                  <div className="flex flex-col gap-4">
+                    <div className="overflow-hidden rounded-lg border bg-background">
+                      <img
+                        src={previewUrl}
+                        alt="Selected menu preview"
+                        className="max-h-[300px] w-full object-contain"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <p className="text-sm text-muted-foreground">{selectedFile?.name}</p>
+                      <Button type="button" variant="secondary" onClick={clearSelection}>
+                        Clear
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-lg border border-dashed bg-background/80 px-6 py-10 text-center">
+                    <ImageUp className="size-8 text-muted-foreground" aria-hidden="true" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">No image selected</p>
+                      <p className="text-sm text-muted-foreground">
+                        Your menu preview will appear here after you take a photo or choose a file.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  type="button"
+                  onClick={handleAnalyze}
+                  disabled={!selectedFile}
+                >
+                  Analyze Menu
+                </Button>
+                {selectedFile ? (
+                  <Button type="button" variant="ghost" onClick={clearSelection}>
+                    Change Image
+                  </Button>
+                ) : null}
+              </div>
+            </>
+          ) : null}
         </CardContent>
       </Card>
     </div>
