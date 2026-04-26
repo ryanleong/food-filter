@@ -6,11 +6,13 @@ import * as storage from '@/lib/storage';
 import type { ScanRecord } from '@/lib/types';
 
 const mockPush = vi.fn();
+const mockUseParams = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useParams: () => mockUseParams(),
 }));
 
 vi.mock('@/lib/storage', () => ({
@@ -41,18 +43,16 @@ const RECORD: ScanRecord = {
   blacklistSnapshot: ['peanuts', 'dairy'],
 };
 
-async function renderPage(id = 'scan-123') {
-  const page = await HistoryDetailPage({
-    params: Promise.resolve({ id }),
-  });
-
-  return render(page);
+function renderPage(id = 'scan-123') {
+  mockUseParams.mockReturnValue({ id });
+  return render(HistoryDetailPage());
 }
 
 describe('HistoryDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetHistory.mockReturnValue([RECORD]);
+    mockUseParams.mockReturnValue({ id: 'scan-123' });
   });
 
   it('renders the scan results for the selected history record', async () => {

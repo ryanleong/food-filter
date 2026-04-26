@@ -2,16 +2,14 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { ScanResultsSection } from '@/components/ScanResultsSection';
 import { Button } from '@/components/ui/button';
 import { useHistoryRecord } from '@/lib/hooks/useHistory';
 import { formatScanDate } from '@/lib/scan-records';
 
-interface HistoryDetailClientProps {
-  id: string;
-}
-
-export function HistoryDetailClient({ id }: HistoryDetailClientProps) {
+export function HistoryDetailClient() {
+  const { id } = useParams<{ id: string }>();
   const { record, loaded } = useHistoryRecord(id);
   const [showBlacklist, setShowBlacklist] = useState(false);
 
