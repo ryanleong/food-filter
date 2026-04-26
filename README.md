@@ -30,4 +30,8 @@ Filter restaurant menus by your personal ingredient blacklist using AI.
 
 ## Deployment (Vercel)
 
-Set `GEMINI_API_KEY` as an environment variable in your Vercel project settings. No other environment variables are required.
+1. Import the repository into [Vercel](https://vercel.com/new)
+2. Add `GEMINI_API_KEY` as an environment variable in your Vercel project settings (Settings → Environment Variables)
+3. Deploy — Vercel auto-detects Next.js and runs `next build`
+
+No other environment variables are required. The PWA service worker is automatically enabled in production (`NODE_ENV=production`).
