@@ -15,7 +15,7 @@
 | E3 | Ingredient Blacklist (Completed) | Manage ingredients UI and persistence |
 | E4 | Menu Scanning (Completed) | Camera/upload UI and image submission |
 | E5 | AI Analysis (Completed) | Gemini Vision integration and prompt engineering |
-| E6 | Results Display | Dish cards, risk badges, ingredient breakdown |
+| E6 | Results Display (Completed) | Dish cards, risk badges, ingredient breakdown |
 | E7 | Scan History | Save, view, and delete past scan results |
 | E8 | PWA Configuration | Manifest, service worker, installability |
 | E9 | Navigation & Shell | App layout, routing, bottom nav |
@@ -421,13 +421,15 @@ export interface ScanRecord {
 
 ---
 
-## E6 — Results Display
+## E6 — Results Display (Completed)
 
 **Goal:** Present the analysis results as an ordered, readable list of dish cards.
 
+**Status:** Completed (April 26, 2026)
+
 ---
 
-### E6-S1 — Results Page & Route
+### E6-S1 — Results Page & Route (Completed)
 
 **As a user,** I want to be taken to a results page after analysis completes so I can see my menu evaluation.
 
@@ -438,7 +440,7 @@ export interface ScanRecord {
 
 ---
 
-### E6-S2 — Dish Card Component
+### E6-S2 — Dish Card Component (Completed)
 
 **As a user,** I want each dish shown as a card with its name, risk level, and relevant ingredients clearly displayed.
 
@@ -455,7 +457,7 @@ export interface ScanRecord {
 
 ---
 
-### E6-S3 — Risk Badge Component
+### E6-S3 — Risk Badge Component (Completed)
 
 **As a user,** I want a color-coded label on each dish card that immediately communicates risk level.
 
@@ -475,7 +477,7 @@ export interface ScanRecord {
 
 ---
 
-### E6-S4 — Results Ordering & Summary
+### E6-S4 — Results Ordering & Summary (Completed)
 
 **As a user,** I want high-risk dishes shown first so the most important information is immediately visible.
 
@@ -489,7 +491,7 @@ export interface ScanRecord {
 
 ---
 
-### E6-S5 — Save Result to History
+### E6-S5 — Save Result to History (Completed)
 
 **As a user,** I want the scan result automatically saved to my history so I can refer back to it later.
 

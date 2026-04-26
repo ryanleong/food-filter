@@ -1,81 +1,75 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import type { ScanRecord } from '@/lib/types';
+import { useResults } from '@/lib/hooks/useResults';
+import { DishCard } from '@/components/DishCard';
+import { Button } from '@/components/ui/button';
+import type { RiskLevel } from '@/lib/types';
 
-const SESSION_KEY = 'foodfilter_current_scan';
-
-const RISK_LABELS: Record<string, string> = {
-  high: '🔴 High',
-  medium: '🟡 Medium',
-  low: '🟢 Low',
-};
+const RISK_ORDER: Record<RiskLevel, number> = { high: 0, medium: 1, low: 2 };
 
 export function ResultsClient() {
-  const router = useRouter();
-  const [loaded, setLoaded] = useState(false);
-  const [record, setRecord] = useState<ScanRecord | null>(null);
-
-  useEffect(() => {
-    const raw = sessionStorage.getItem(SESSION_KEY);
-
-    if (!raw) {
-      router.push('/scan');
-      return;
-    }
-
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch {
-      router.push('/scan');
-      return;
-    }
-
-    if (
-      typeof parsed !== 'object' ||
-      parsed === null ||
-      !('dishes' in parsed) ||
-      !Array.isArray((parsed as Record<string, unknown>).dishes)
-    ) {
-      router.push('/scan');
-      return;
-    }
-
-    setRecord(parsed as ScanRecord);
-    setLoaded(true);
-  }, [router]);
+  const { record, loaded } = useResults();
 
   if (!loaded || !record) {
     return null;
   }
 
+  const sorted = [...record.dishes].sort(
+    (a, b) => RISK_ORDER[a.riskLevel] - RISK_ORDER[b.riskLevel],
+  );
+
+  const highCount   = sorted.filter((d) => d.riskLevel === 'high').length;
+  const mediumCount = sorted.filter((d) => d.riskLevel === 'medium').length;
+  const lowCount    = sorted.filter((d) => d.riskLevel === 'low').length;
+  const allLow      = highCount === 0 && mediumCount === 0 && sorted.length > 0;
+  const noDishes    = sorted.length === 0;
+
   return (
-    <main className="mx-auto max-w-2xl px-4 py-10">
-      <h1 className="mb-6 text-2xl font-bold">Results</h1>
+    <div>
+      {/* Sticky summary bar */}
+      <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur-sm px-4 py-3">
+        <p className="text-sm font-medium">
+          {sorted.length} {sorted.length === 1 ? 'dish' : 'dishes'}
+          {highCount > 0 && (
+            <> · <span className="text-red-600">{highCount} High Risk</span></>
+          )}
+          {mediumCount > 0 && (
+            <> · <span className="text-amber-600">{mediumCount} Medium Risk</span></>
+          )}
+          {lowCount > 0 && (
+            <> · <span className="text-green-600">{lowCount} Safe</span></>
+          )}
+        </p>
+      </div>
 
-      <p className="mb-4 text-muted-foreground">{record.dishes.length} dishes analyzed</p>
+      <main className="mx-auto max-w-2xl px-4 py-6 space-y-4">
+        <Button asChild variant="default">
+          <Link href="/scan">Scan Another Menu</Link>
+        </Button>
 
-      <ul className="mb-8 space-y-2">
-        {record.dishes.map((dish, index) => (
-          <li
-            key={index}
-            className="flex items-center justify-between rounded-lg border px-4 py-3 text-sm"
-          >
-            <span className="font-medium">{dish.name}</span>
-            <span>{RISK_LABELS[dish.riskLevel] ?? dish.riskLevel}</span>
-          </li>
+        {noDishes && (
+          <p className="text-sm text-muted-foreground">
+            No dishes could be identified in this image. Try a clearer photo.
+          </p>
+        )}
+
+        {allLow && (
+          <p className="text-sm font-medium text-green-600">
+            Great news — no blacklisted ingredients detected!
+          </p>
+        )}
+
+        {sorted.map((dish, index) => (
+          <DishCard key={index} dish={dish} />
         ))}
-      </ul>
 
-      <Link
-        href="/scan"
-        className="text-sm font-medium underline underline-offset-4"
-      >
-        Scan Another Menu
-      </Link>
-    </main>
+        {sorted.length > 0 && (
+          <Button asChild variant="default">
+            <Link href="/scan">Scan Another Menu</Link>
+          </Button>
+        )}
+      </main>
+    </div>
   );
 }

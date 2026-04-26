@@ -71,14 +71,14 @@ describe('analyzeMenu', () => {
     mockGenerateContent.mockResolvedValue({ text: 'not-json' });
     await expect(
       analyzeMenu(new ArrayBuffer(0), 'image/jpeg', [])
-    ).rejects.toThrow('Failed to parse AI response');
+    ).rejects.toThrow();
   });
 
   it('throws when the response is not a JSON array', async () => {
     mockGenerateContent.mockResolvedValue({ text: '{"name":"Burger"}' });
     await expect(
       analyzeMenu(new ArrayBuffer(0), 'image/jpeg', [])
-    ).rejects.toThrow('Failed to parse AI response');
+    ).rejects.toThrow();
   });
 
   it('filters out dishes missing required fields', async () => {

@@ -98,7 +98,7 @@ export function ScanInput() {
     }
   }
 
-  function handleAnalyze() {
+  async function handleAnalyze() {
     if (!selectedFile) {
       setValidationError('Select a menu image before analyzing.');
       return;
@@ -110,7 +110,10 @@ export function ScanInput() {
       return;
     }
 
-    analyze(selectedFile, items);
+    const succeeded = await analyze(selectedFile, items);
+    if (succeeded) {
+      clearSelection();
+    }
   }
 
   return (

@@ -11,7 +11,8 @@ export type AnalyzeStatus = 'idle' | 'loading' | 'error';
 export interface UseAnalyzeReturn {
   status: AnalyzeStatus;
   error: string | null;
-  analyze: (file: File, blacklist: string[]) => Promise<void>;
+  /** Resolves `true` on success, `false` on any error. */
+  analyze: (file: File, blacklist: string[]) => Promise<boolean>;
   reset: () => void;
 }
 
@@ -35,7 +36,7 @@ export function useAnalyze(): UseAnalyzeReturn {
   const [status, setStatus] = useState<AnalyzeStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
-  async function analyze(file: File, blacklist: string[]): Promise<void> {
+  async function analyze(file: File, blacklist: string[]): Promise<boolean> {
     setStatus('loading');
     setError(null);
 
@@ -54,7 +55,7 @@ export function useAnalyze(): UseAnalyzeReturn {
       if (!response.ok) {
         setError(mapError(response.status));
         setStatus('error');
-        return;
+        return false;
       }
 
       const json = (await response.json()) as { dishes: ScanRecord['dishes'] };
@@ -78,8 +79,12 @@ export function useAnalyze(): UseAnalyzeReturn {
         console.warn('[useAnalyze] Failed to write to sessionStorage');
       }
 
-      // Step 5: Navigate to results
+      // Step 5: Navigate to results, then reset so the router cache doesn't
+      // preserve the 'loading' state when the user returns to /scan.
       router.push('/results');
+      setStatus('idle');
+      setError(null);
+      return true;
     } catch (err) {
       if (err instanceof TypeError && err.message.includes('fetch')) {
         // True network failure — fetch itself threw
@@ -88,6 +93,7 @@ export function useAnalyze(): UseAnalyzeReturn {
         setError('Something went wrong. Please try again.');
       }
       setStatus('error');
+      return false;
     }
   }
 

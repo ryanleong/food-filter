@@ -135,7 +135,7 @@ export async function analyzeMenu(
     parsed = JSON.parse(cleaned);
   } catch (err) {
     console.error("[gemini] Failed to parse AI response:", err);
-    throw new Error("Failed to parse AI response");
+    throw err;
   }
 
   if (!Array.isArray(parsed)) throw new Error("Failed to parse AI response");

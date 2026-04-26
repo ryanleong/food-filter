@@ -1,0 +1,50 @@
+[33mThe plugin "vite-tsconfig-paths" is detected. Vite now supports tsconfig paths resolution natively via the [1mresolve.tsconfigPaths[22m option. You can remove the plugin and set [1mresolve.tsconfigPaths: true[22m in your Vite config instead.[39m
+
+[1m[30m[46m RUN [49m[39m[22m [36mv4.1.5 [39m[90mD:/Documents/repositories/food-filter[39m
+
+
+<--- Last few GCs --->
+
+[16648:0000021A0DC1D000]    60707 ms: Scavenge (interleaved) 4083.3 (4092.2) -> 4080.1 (4101.2) MB, pooled: 0 MB, 6.28 / 0.00 ms  (average mu = 0.313, current mu = 0.279) allocation failure; 
+[16648:0000021A0DC1D000]    61516 ms: Mark-Compact (reduce) 4088.9 (4102.7) -> 4081.0 (4087.5) MB, pooled: 0 MB, 30.78 / 0.00 ms  (+ 702.4 ms in 141 steps since start of marking, biggest step 5.5 ms, walltime since start of marking 809 ms) (average mu = 0
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 00007FF6654F97FF node::OnFatalError+1343
+ 2: 00007FF66613DA77 v8::Function::NewInstance+423
+ 3: 00007FF665F3E327 v8::base::AddressSpaceReservation::AddressSpaceReservation+322071
+ 4: 00007FF665F42034 v8::base::AddressSpaceReservation::AddressSpaceReservation+337700
+ 5: 00007FF665F50FCC v8::internal::StrongRootAllocatorBase::deallocate_impl+16604
+ 6: 00007FF665F5080B v8::internal::StrongRootAllocatorBase::deallocate_impl+14619
+ 7: 00007FF6673B89AD v8::base::UnsignedDivisionByConstant<unsigned __int64>+2791325
+ 8: 00007FF665F3BDF0 v8::base::AddressSpaceReservation::AddressSpaceReservation+312544
+ 9: 00007FF665FBF979 v8::Unlocker::~Unlocker+9273
+10: 00007FF665B354E2 v8::String::Utf8Value::~Utf8Value+141746
+11: 0000021A462B733A 
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Error [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+[31m[1mError[22m: [vitest-pool]: Worker forks emitted error.[39m
+[90m [2m❯[22m EventEmitter.<anonymous> node_modules/vitest/dist/chunks/cli-api.Cjt90eJu.js:[2m3445:22[22m[39m
+[90m [2m❯[22m EventEmitter.emit node:events:[2m508:28[22m[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/cli-api.Cjt90eJu.js:[2m3012:22[22m[39m
+[90m [2m❯[22m ChildProcess.emit node:events:[2m508:28[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit node:internal/child_process:[2m294:12[22m[39m
+
+[31m[1mCaused by: Error[22m: Worker exited unexpectedly[39m
+[90m [2m❯[22m ChildProcess.emitUnexpectedExit node_modules/vitest/dist/chunks/cli-api.Cjt90eJu.js:[2m3011:33[22m[39m
+[90m [2m❯[22m ChildProcess.emit node:events:[2m508:28[22m[39m
+[90m [2m❯[22m Process.ChildProcess._handle.onexit node:internal/child_process:[2m294:12[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [90m (1)[39m
+[2m      Tests [22m [90m (6)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 18:47:27
+[2m   Duration [22m 61.72s[2m (transform 26ms, setup 64ms, import 113ms, tests 0ms, environment 561ms)[22m
+
