@@ -12,7 +12,7 @@
 |---|------|-------------|
 | E1 | Project Scaffold & Cleanup (Completed) | Remove auth, configure PWA foundation |
 | E2 | Core Infrastructure (Completed) | Types, storage helpers, image utility, API proxy |
-| E3 | Ingredient Blacklist | Manage ingredients UI and persistence |
+| E3 | Ingredient Blacklist (Completed) | Manage ingredients UI and persistence |
 | E4 | Menu Scanning | Camera/upload UI and image submission |
 | E5 | AI Analysis | Gemini Vision integration and prompt engineering |
 | E6 | Results Display | Dish cards, risk badges, ingredient breakdown |
@@ -220,9 +220,11 @@ export interface ScanRecord {
 
 ---
 
-## E3 — Ingredient Blacklist
+## E3 — Ingredient Blacklist (Completed)
 
 **Goal:** Let users build and maintain their personal list of ingredients to avoid.
+
+**Status:** Completed (April 26, 2026)
 
 ---
 

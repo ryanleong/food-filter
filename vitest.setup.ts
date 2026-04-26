@@ -1,3 +1,5 @@
+import '@testing-library/jest-dom';
+
 // Global test setup — runs in each test file's own environment.
 //
 // Issue: request.formData() hangs in Vitest (all environments) when the
