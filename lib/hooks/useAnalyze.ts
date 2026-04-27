@@ -16,12 +16,13 @@ export interface UseAnalyzeReturn {
   reset: () => void;
 }
 
-function mapError(status?: number): string {
+function mapError(status?: number, serverMessage?: string): string {
   if (status === 400) {
     return 'Invalid request. Please re-select your image and try again.';
   }
   if (status === 503) {
-    return 'AI service quota exceeded. Please wait a moment and try again.';
+    // Use the server-provided message to distinguish quota vs. unavailable errors
+    return serverMessage ?? 'AI service quota exceeded. Please wait a moment and try again.';
   }
   if (status !== undefined) {
     // 500 or any other non-OK status
@@ -53,7 +54,14 @@ export function useAnalyze(): UseAnalyzeReturn {
       const response = await fetch('/api/analyze', { method: 'POST', body });
 
       if (!response.ok) {
-        setError(mapError(response.status));
+        let serverMessage: string | undefined;
+        try {
+          const errBody = (await response.json()) as { error?: string };
+          serverMessage = errBody.error;
+        } catch {
+          // ignore parse failure; fall back to generic message
+        }
+        setError(mapError(response.status, serverMessage));
         setStatus('error');
         return false;
       }

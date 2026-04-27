@@ -84,6 +84,13 @@ export async function POST(request: Request) {
       );
     }
 
+    if (geminiStatus === 503) {
+      return NextResponse.json(
+        { error: 'The AI service is temporarily unavailable due to high demand. Please try again later.' },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(
       { error: 'Analysis failed. Please try again.' },
       { status: 500 }
