@@ -2,18 +2,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HistoryPage from '@/app/history/page';
-import * as storage from '@/lib/storage';
 import type { ScanRecord } from '@/lib/types';
 
-vi.mock('@/lib/storage', () => ({
-  getHistory: vi.fn(),
-  deleteScanRecord: vi.fn(),
-  clearHistory: vi.fn(),
+const mockGetHistory = vi.hoisted(() => vi.fn());
+const mockDeleteRecord = vi.hoisted(() => vi.fn());
+const mockClearHistory = vi.hoisted(() => vi.fn());
+const mockUseAuth = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/db/history', () => ({
+  getHistory: mockGetHistory,
+  deleteRecord: mockDeleteRecord,
+  clearHistory: mockClearHistory,
+  getRecord: vi.fn(),
+  addRecord: vi.fn(),
 }));
 
-const mockGetHistory = vi.mocked(storage.getHistory);
-const mockDeleteScanRecord = vi.mocked(storage.deleteScanRecord);
-const mockClearHistory = vi.mocked(storage.clearHistory);
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: mockUseAuth,
+}));
 
 const HISTORY: ScanRecord[] = [
   {
@@ -57,10 +63,15 @@ function renderPage() {
   return render(<HistoryPage />);
 }
 
+const MOCK_USER = { id: 'user-1' };
+
 describe('HistoryPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetHistory.mockReturnValue([]);
+    mockUseAuth.mockReturnValue({ user: MOCK_USER, signOut: vi.fn() });
+    mockGetHistory.mockResolvedValue([]);
+    mockDeleteRecord.mockResolvedValue(undefined);
+    mockClearHistory.mockResolvedValue(undefined);
   });
 
   it('renders the page heading', async () => {
@@ -74,7 +85,7 @@ describe('HistoryPage', () => {
   });
 
   it('renders newest-first history entries with summaries and view links', async () => {
-    mockGetHistory.mockReturnValue(HISTORY);
+    mockGetHistory.mockResolvedValue(HISTORY);
     renderPage();
 
     expect(await screen.findByText(/2 dishes · 1 high risk · 0 medium risk/i)).toBeInTheDocument();
@@ -86,7 +97,7 @@ describe('HistoryPage', () => {
   });
 
   it('shows inline confirm controls before deleting one entry', async () => {
-    mockGetHistory.mockReturnValue(HISTORY);
+    mockGetHistory.mockResolvedValue(HISTORY);
     renderPage();
 
     await screen.findByText(/2 dishes · 1 high risk · 0 medium risk/i);
@@ -95,21 +106,21 @@ describe('HistoryPage', () => {
     expect(screen.getByText(/are you sure\?/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /confirm delete/i }));
 
-    expect(mockDeleteScanRecord).toHaveBeenCalledWith('scan-2');
+    expect(mockDeleteRecord).toHaveBeenCalledWith('user-1', 'scan-2');
     await waitFor(() => {
       expect(screen.queryByText(/2 dishes · 1 high risk · 0 medium risk/i)).not.toBeInTheDocument();
     });
   });
 
   it('clears all history after confirming in the dialog', async () => {
-    mockGetHistory.mockReturnValue(HISTORY);
+    mockGetHistory.mockResolvedValue(HISTORY);
     renderPage();
 
     await screen.findByText(/2 dishes · 1 high risk · 0 medium risk/i);
     await userEvent.click(screen.getByRole('button', { name: /clear all history/i }));
     await userEvent.click(screen.getByRole('button', { name: /confirm clear history/i }));
 
-    expect(mockClearHistory).toHaveBeenCalledOnce();
+    expect(mockClearHistory).toHaveBeenCalledWith('user-1');
     await waitFor(() => {
       expect(screen.getByText(/no scans yet\. scan a menu to get started\./i)).toBeInTheDocument();
     });

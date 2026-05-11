@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   // Silence Turbopack warning — webpack config is injected by @ducanh2912/next-pwa, not custom user config
   turbopack: {},
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+  },
   async headers() {
     return [
       {

@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useAnalyze } from '@/lib/hooks/useAnalyze';
-import * as storage from '@/lib/storage';
 import * as imageLib from '@/lib/image';
+import * as analyzeAction from '@/lib/actions/analyze';
+import type { ScanRecord } from '@/lib/types';
 
 // ---- Module mocks ----
 
-vi.mock('@/lib/storage', () => ({
-  addScanRecord: vi.fn(),
+vi.mock('@/lib/actions/analyze', () => ({
+  analyzeMenu: vi.fn(),
 }));
 
 vi.mock('@/lib/image', () => ({
@@ -22,10 +23,10 @@ vi.mock('next/navigation', () => ({
 
 // ---- Helpers ----
 
-const mockAddScanRecord = vi.mocked(storage.addScanRecord);
+const mockAnalyzeMenu = vi.mocked(analyzeAction.analyzeMenu);
 const mockCompressImage = vi.mocked(imageLib.compressImage);
 
-/** Returns a minimal 1×1 JPEG Blob */
+/** Returns a minimal fake JPEG Blob */
 function fakeBlob(): Blob {
   return new Blob(['fake-image-data'], { type: 'image/jpeg' });
 }
@@ -38,39 +39,29 @@ function fakeFile(): File {
 const FIXED_UUID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 const FIXED_ISO  = '2026-04-26T12:00:00.000Z';
 
-const DISHES = [
+const DISHES: ScanRecord['dishes'] = [
   {
     name: 'Pad Thai',
-    riskLevel: 'high' as const,
+    riskLevel: 'high',
     blacklistedFound: ['peanuts'],
     allIngredients: ['peanuts', 'rice noodles', 'tofu'],
-    source: 'both' as const,
+    source: 'both',
   },
 ];
 
-/** Configures global.fetch to resolve with a successful dishes response */
-function mockFetchSuccess() {
-  (global.fetch as Mock).mockResolvedValueOnce(
-    new Response(JSON.stringify({ dishes: DISHES }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  );
+const MOCK_RECORD: ScanRecord = {
+  id: FIXED_UUID,
+  createdAt: FIXED_ISO,
+  dishes: DISHES,
+  blacklistSnapshot: ['peanuts'],
+};
+
+function mockActionSuccess() {
+  mockAnalyzeMenu.mockResolvedValueOnce({ success: true, record: MOCK_RECORD });
 }
 
-/** Configures global.fetch to resolve with the given HTTP status */
-function mockFetchStatus(status: number) {
-  (global.fetch as Mock).mockResolvedValueOnce(
-    new Response(JSON.stringify({ error: 'fail' }), {
-      status,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  );
-}
-
-/** Configures global.fetch to reject (network failure) */
-function mockFetchNetworkError() {
-  (global.fetch as Mock).mockRejectedValueOnce(new TypeError('Failed to fetch'));
+function mockActionError(error = 'Analysis failed. Please try again.') {
+  mockAnalyzeMenu.mockResolvedValueOnce({ success: false, error });
 }
 
 // ---- Setup ----
@@ -80,12 +71,6 @@ beforeEach(() => {
 
   // Default: compression succeeds
   mockCompressImage.mockResolvedValue(fakeBlob());
-
-  // Stable UUID and timestamp for deterministic assertions
-  vi.spyOn(crypto, 'randomUUID').mockReturnValue(FIXED_UUID);
-  vi.spyOn(Date.prototype, 'toISOString').mockReturnValue(FIXED_ISO);
-
-  global.fetch = vi.fn();
 
   // Reset sessionStorage between tests
   sessionStorage.clear();
@@ -100,9 +85,9 @@ describe('useAnalyze', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('T2: status transitions to loading while fetch is in flight', async () => {
-    // Fetch never resolves during this test — we inspect the in-flight state
-    (global.fetch as Mock).mockReturnValueOnce(new Promise(() => {}));
+  it('T2: status transitions to loading while action is in flight', async () => {
+    // Action never resolves during this test — we inspect the in-flight state
+    mockAnalyzeMenu.mockReturnValueOnce(new Promise(() => {}));
 
     const { result } = renderHook(() => useAnalyze());
     act(() => {
@@ -112,35 +97,25 @@ describe('useAnalyze', () => {
     expect(result.current.status).toBe('loading');
   });
 
-  it('T3: on success — saves record, writes sessionStorage, navigates to /results', async () => {
-    mockFetchSuccess();
+  it('T3: on success — writes sessionStorage and navigates to /results', async () => {
+    mockActionSuccess();
 
     const { result } = renderHook(() => useAnalyze());
     await act(async () => {
       await result.current.analyze(fakeFile(), ['peanuts']);
     });
 
-    // addScanRecord called with correct record shape
-    expect(mockAddScanRecord).toHaveBeenCalledOnce();
-    const savedRecord = mockAddScanRecord.mock.calls[0][0];
-    expect(savedRecord).toEqual({
-      id: FIXED_UUID,
-      createdAt: FIXED_ISO,
-      dishes: DISHES,
-      blacklistSnapshot: ['peanuts'],
-    });
-
-    // sessionStorage written with the same record
+    // sessionStorage written with the record returned by the action
     const stored = sessionStorage.getItem('foodfilter_current_scan');
     expect(stored).not.toBeNull();
-    expect(JSON.parse(stored!)).toEqual(savedRecord);
+    expect(JSON.parse(stored!)).toEqual(MOCK_RECORD);
 
     // navigated to results
     expect(mockPush).toHaveBeenCalledWith('/results');
   });
 
-  it('T4: network error → status=error with correct message', async () => {
-    mockFetchNetworkError();
+  it('T4: action returns error → status=error with that error message', async () => {
+    mockActionError('Could not reach the analysis service. Check your connection and try again.');
 
     const { result } = renderHook(() => useAnalyze());
     await act(async () => {
@@ -149,13 +124,13 @@ describe('useAnalyze', () => {
 
     await waitFor(() => expect(result.current.status).toBe('error'));
     expect(result.current.error).toBe(
-      'Could not reach the analysis service. Check your connection and try again.'
+      'Could not reach the analysis service. Check your connection and try again.',
     );
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('T5: HTTP 400 → status=error with correct message', async () => {
-    mockFetchStatus(400);
+  it('T5: action returns validation error → status=error', async () => {
+    mockActionError('Invalid request. Please re-select your image and try again.');
 
     const { result } = renderHook(() => useAnalyze());
     await act(async () => {
@@ -164,12 +139,12 @@ describe('useAnalyze', () => {
 
     await waitFor(() => expect(result.current.status).toBe('error'));
     expect(result.current.error).toBe(
-      'Invalid request. Please re-select your image and try again.'
+      'Invalid request. Please re-select your image and try again.',
     );
   });
 
-  it('T6: HTTP 500 → status=error with correct message', async () => {
-    mockFetchStatus(500);
+  it('T6: action returns generic failure → status=error', async () => {
+    mockActionError('Analysis failed. Please try again.');
 
     const { result } = renderHook(() => useAnalyze());
     await act(async () => {
@@ -180,22 +155,8 @@ describe('useAnalyze', () => {
     expect(result.current.error).toBe('Analysis failed. Please try again.');
   });
 
-  it('T6b: HTTP 503 (Gemini quota exceeded) → status=error with rate limit message', async () => {
-    mockFetchStatus(503);
-
-    const { result } = renderHook(() => useAnalyze());
-    await act(async () => {
-      await result.current.analyze(fakeFile(), []);
-    });
-
-    await waitFor(() => expect(result.current.status).toBe('error'));
-    expect(result.current.error).toBe(
-      'AI service quota exceeded. Please wait a moment and try again.'
-    );
-  });
-
   it('T7: reset() clears error and returns to idle', async () => {
-    mockFetchStatus(500);
+    mockActionError();
 
     const { result } = renderHook(() => useAnalyze());
     await act(async () => {
@@ -212,9 +173,8 @@ describe('useAnalyze', () => {
   });
 
   it('T8: sessionStorage failure does not prevent navigation to /results', async () => {
-    mockFetchSuccess();
+    mockActionSuccess();
 
-    // Force sessionStorage.setItem to throw
     vi.spyOn(sessionStorage, 'setItem').mockImplementationOnce(() => {
       throw new Error('QuotaExceededError');
     });
@@ -224,10 +184,7 @@ describe('useAnalyze', () => {
       await result.current.analyze(fakeFile(), ['peanuts']);
     });
 
-    // Navigation still happens despite sessionStorage failure
     expect(mockPush).toHaveBeenCalledWith('/results');
-    // addScanRecord (localStorage) was still called
-    expect(mockAddScanRecord).toHaveBeenCalledOnce();
   });
 
   it('T9: compressImage failure → status=error with generic message', async () => {
@@ -243,3 +200,4 @@ describe('useAnalyze', () => {
     expect(mockPush).not.toHaveBeenCalled();
   });
 });
+

@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { compressImage } from '@/lib/image';
-import { addScanRecord } from '@/lib/storage';
-import type { ScanRecord } from '@/lib/types';
+import { analyzeMenu as analyzeMenuAction } from '@/lib/actions/analyze';
 
 export type AnalyzeStatus = 'idle' | 'loading' | 'error';
 
@@ -14,22 +13,6 @@ export interface UseAnalyzeReturn {
   /** Resolves `true` on success, `false` on any error. */
   analyze: (file: File, blacklist: string[]) => Promise<boolean>;
   reset: () => void;
-}
-
-function mapError(status?: number, serverMessage?: string): string {
-  if (status === 400) {
-    return 'Invalid request. Please re-select your image and try again.';
-  }
-  if (status === 503) {
-    // Use the server-provided message to distinguish quota vs. unavailable errors
-    return serverMessage ?? 'AI service quota exceeded. Please wait a moment and try again.';
-  }
-  if (status !== undefined) {
-    // 500 or any other non-OK status
-    return 'Analysis failed. Please try again.';
-  }
-  // Network-level failure (fetch threw)
-  return 'Could not reach the analysis service. Check your connection and try again.';
 }
 
 export function useAnalyze(): UseAnalyzeReturn {
@@ -50,38 +33,18 @@ export function useAnalyze(): UseAnalyzeReturn {
       body.append('image', compressed, 'menu.jpg');
       body.append('blacklist', JSON.stringify(blacklist));
 
-      // Step 3: Call the server proxy
-      const response = await fetch('/api/analyze', { method: 'POST', body });
+      // Step 3: Call the Server Action
+      const result = await analyzeMenuAction(body);
 
-      if (!response.ok) {
-        let serverMessage: string | undefined;
-        try {
-          const errBody = (await response.json()) as { error?: string };
-          serverMessage = errBody.error;
-        } catch {
-          // ignore parse failure; fall back to generic message
-        }
-        setError(mapError(response.status, serverMessage));
+      if (!result.success) {
+        setError(result.error);
         setStatus('error');
         return false;
       }
 
-      const json = (await response.json()) as { dishes: ScanRecord['dishes'] };
-
-      // Step 4: Build and persist the scan record
-      const record: ScanRecord = {
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString(),
-        dishes: json.dishes,
-        blacklistSnapshot: [...blacklist],
-      };
-
-      // Persist to localStorage history (fire-and-forget; storage.ts handles errors)
-      addScanRecord(record);
-
-      // Write to sessionStorage for the results page handoff
+      // Step 4: Write to sessionStorage for the results page handoff
       try {
-        sessionStorage.setItem('foodfilter_current_scan', JSON.stringify(record));
+        sessionStorage.setItem('foodfilter_current_scan', JSON.stringify(result.record));
       } catch {
         // sessionStorage unavailable (private browsing quota reached) — navigate anyway
         console.warn('[useAnalyze] Failed to write to sessionStorage');
@@ -93,13 +56,9 @@ export function useAnalyze(): UseAnalyzeReturn {
       setStatus('idle');
       setError(null);
       return true;
-    } catch (err) {
-      if (err instanceof TypeError && err.message.includes('fetch')) {
-        // True network failure — fetch itself threw
-        setError('Could not reach the analysis service. Check your connection and try again.');
-      } else {
-        setError('Something went wrong. Please try again.');
-      }
+    } catch {
+      // Unexpected error (e.g. compressImage failure)
+      setError('Something went wrong. Please try again.');
       setStatus('error');
       return false;
     }

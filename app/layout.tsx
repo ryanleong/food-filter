@@ -5,8 +5,7 @@ import { ThemeProvider } from 'next-themes';
 import './globals.css';
 import TopBar from '@/components/TopBar';
 import BottomNav from '@/components/BottomNav';
-import { BlacklistProvider } from '@/app/providers';
-import { StorageBanner } from '@/components/StorageBanner';
+import { AuthProvider, BlacklistProvider } from '@/app/providers';
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -46,16 +45,17 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <TopBar />
-          <BlacklistProvider>
-            <StorageBanner />
-            <main className="pb-16">
-              {children}
-            </main>
-          </BlacklistProvider>
-          <Suspense fallback={<div className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t bg-background" />}>
-            <BottomNav />
-          </Suspense>
+          <AuthProvider>
+            <BlacklistProvider>
+              <TopBar />
+              <main className="pb-16">
+                {children}
+              </main>
+              <Suspense fallback={<div className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t bg-background" />}>
+                <BottomNav />
+              </Suspense>
+            </BlacklistProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

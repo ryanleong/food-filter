@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import HistoryDetailPage from '@/app/history/[id]/page';
-import * as storage from '@/lib/storage';
 import type { ScanRecord } from '@/lib/types';
 
 const mockPush = vi.fn();
@@ -15,11 +14,20 @@ vi.mock('next/navigation', () => ({
   useParams: () => mockUseParams(),
 }));
 
-vi.mock('@/lib/storage', () => ({
+const mockGetRecord = vi.hoisted(() => vi.fn());
+const mockUseAuth = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/db/history', () => ({
   getHistory: vi.fn(),
+  getRecord: mockGetRecord,
+  addRecord: vi.fn(),
+  deleteRecord: vi.fn(),
+  clearHistory: vi.fn(),
 }));
 
-const mockGetHistory = vi.mocked(storage.getHistory);
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: mockUseAuth,
+}));
 
 const RECORD: ScanRecord = {
   id: 'scan-123',
@@ -43,6 +51,8 @@ const RECORD: ScanRecord = {
   blacklistSnapshot: ['peanuts', 'dairy'],
 };
 
+const MOCK_USER = { id: 'user-1' };
+
 function renderPage(id = 'scan-123') {
   mockUseParams.mockReturnValue({ id });
   return render(HistoryDetailPage());
@@ -51,7 +61,8 @@ function renderPage(id = 'scan-123') {
 describe('HistoryDetailPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetHistory.mockReturnValue([RECORD]);
+    mockUseAuth.mockReturnValue({ user: MOCK_USER, signOut: vi.fn() });
+    mockGetRecord.mockResolvedValue(RECORD);
     mockUseParams.mockReturnValue({ id: 'scan-123' });
   });
 
@@ -75,6 +86,7 @@ describe('HistoryDetailPage', () => {
   });
 
   it('redirects to /history when the record does not exist', async () => {
+    mockGetRecord.mockResolvedValue(null);
     await renderPage('missing-id');
 
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/history'));

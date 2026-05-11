@@ -1,47 +1,60 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getBlacklist, saveBlacklist } from '@/lib/storage';
+import { useAuth } from '@/lib/hooks/useAuth';
+import { getBlacklist, addItem, removeItem } from '@/lib/db/blacklist';
 
 export interface UseBlacklistReturn {
   items: string[];
   add: (raw: string) => void;
   remove: (name: string) => void;
+  loading: boolean;
 }
 
 export function useBlacklist(): UseBlacklistReturn {
+  const { user } = useAuth();
   const [items, setItems] = useState<string[]>([]);
-  const [hasHydrated, setHasHydrated] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setItems(getBlacklist());
-    setHasHydrated(true);
-  }, []);
-
-  // Sync to localStorage whenever items change (pure updater pattern — no side effects in setItems)
-  useEffect(() => {
-    if (!hasHydrated) return;
-    saveBlacklist(items);
-  }, [hasHydrated, items]);
+    if (!user) {
+      setItems([]);
+      return;
+    }
+    setLoading(true);
+    getBlacklist(user.id)
+      .then(setItems)
+      .catch((err) => console.warn('Failed to load blacklist:', err))
+      .finally(() => setLoading(false));
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function add(raw: string): void {
+    if (!user) return;
     const normalized = raw.trim().toLowerCase();
     if (!normalized) return;
-    setItems((prev) => {
-      if (prev.includes(normalized)) return prev;
-      return [...prev, normalized];
+    // Bail early if already present — no DB call needed
+    if (items.includes(normalized)) return;
+    // Optimistic update
+    setItems((prev) => [...prev, normalized]);
+    addItem(user.id, normalized).catch((err) => {
+      console.warn('Failed to add item:', err);
+      // Revert optimistic update on error
+      setItems((prev) => prev.filter((item) => item !== normalized));
     });
   }
 
   function remove(name: string): void {
+    if (!user) return;
     const normalized = name.trim().toLowerCase();
-    setItems((prev) => {
-      const updated = prev.filter((item) => item !== normalized);
-      // Return prev unchanged if item wasn't in the list (avoids spurious re-renders + saves)
-      if (updated.length === prev.length) return prev;
-      return updated;
+    const snapshot = items;
+    // Optimistic update
+    setItems((current) => current.filter((item) => item !== normalized));
+    removeItem(user.id, normalized).catch((err) => {
+      console.warn('Failed to remove item:', err);
+      // Revert optimistic update on error
+      setItems(snapshot);
     });
   }
 
-  return { items, add, remove };
+  return { items, add, remove, loading };
 }

@@ -1,162 +1,181 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useBlacklist } from '@/lib/hooks/useBlacklist';
-import * as storage from '@/lib/storage';
 
-vi.mock('@/lib/storage', () => ({
-  getBlacklist: vi.fn(),
-  saveBlacklist: vi.fn(),
+const mockGetBlacklist = vi.hoisted(() => vi.fn<() => Promise<string[]>>());
+const mockAddItem = vi.hoisted(() => vi.fn<() => Promise<void>>());
+const mockRemoveItem = vi.hoisted(() => vi.fn<() => Promise<void>>());
+
+vi.mock('@/lib/db/blacklist', () => ({
+  getBlacklist: mockGetBlacklist,
+  addItem: mockAddItem,
+  removeItem: mockRemoveItem,
 }));
 
-const mockGetBlacklist = vi.mocked(storage.getBlacklist);
-const mockSaveBlacklist = vi.mocked(storage.saveBlacklist);
+const mockUseAuth = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/hooks/useAuth', () => ({
+  useAuth: mockUseAuth,
+}));
+
+const fakeUser = { id: 'user-123' };
 
 describe('useBlacklist', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetBlacklist.mockReturnValue([]);
+    mockGetBlacklist.mockResolvedValue([]);
+    mockAddItem.mockResolvedValue(undefined);
+    mockRemoveItem.mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({ user: fakeUser, signOut: vi.fn() });
   });
 
   describe('initialization', () => {
     it('hydrates items from getBlacklist() after mount', async () => {
-      mockGetBlacklist.mockReturnValue(['nuts', 'dairy']);
+      mockGetBlacklist.mockResolvedValue(['nuts', 'dairy']);
       const { result } = renderHook(() => useBlacklist());
       await waitFor(() => {
         expect(result.current.items).toEqual(['nuts', 'dairy']);
       });
+      expect(mockGetBlacklist).toHaveBeenCalledWith('user-123');
     });
 
-    it('initializes to [] when storage is empty', () => {
-      mockGetBlacklist.mockReturnValue([]);
+    it('initializes to [] when DB returns empty array', async () => {
+      mockGetBlacklist.mockResolvedValue([]);
       const { result } = renderHook(() => useBlacklist());
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
       expect(result.current.items).toEqual([]);
+    });
+
+    it('loading is true during initial fetch, false after', async () => {
+      let resolve: (v: string[]) => void;
+      mockGetBlacklist.mockReturnValue(new Promise((res) => { resolve = res; }));
+      const { result } = renderHook(() => useBlacklist());
+      expect(result.current.loading).toBe(true);
+      act(() => resolve!([]));
+      await waitFor(() => {
+        expect(result.current.loading).toBe(false);
+      });
     });
   });
 
   describe('add', () => {
-    it('adds a new ingredient', () => {
+    it('normalizes and calls addItem', async () => {
       const { result } = renderHook(() => useBlacklist());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      await act(async () => result.current.add('  PEANUTS  '));
+      expect(mockAddItem).toHaveBeenCalledWith('user-123', 'peanuts');
+    });
+
+    it('optimistically updates state before DB call resolves', async () => {
+      const { result } = renderHook(() => useBlacklist());
+      await waitFor(() => expect(result.current.loading).toBe(false));
       act(() => result.current.add('peanuts'));
       expect(result.current.items).toContain('peanuts');
     });
 
-    it('trims whitespace before adding', () => {
+    it('reverts optimistic update on DB error', async () => {
+      mockAddItem.mockRejectedValue(new Error('DB error'));
       const { result } = renderHook(() => useBlacklist());
-      act(() => result.current.add('  peanuts  '));
-      expect(result.current.items).toContain('peanuts');
-      expect(result.current.items).not.toContain('  peanuts  ');
+      await waitFor(() => expect(result.current.loading).toBe(false));
+      await act(async () => result.current.add('peanuts'));
+      await waitFor(() => expect(result.current.items).not.toContain('peanuts'));
     });
 
-    it('lowercases the ingredient before adding', () => {
+    it('silently ignores empty string', async () => {
       const { result } = renderHook(() => useBlacklist());
-      act(() => result.current.add('Peanuts'));
-      expect(result.current.items).toContain('peanuts');
-      expect(result.current.items).not.toContain('Peanuts');
-    });
-
-    it('silently ignores empty string', () => {
-      const { result } = renderHook(() => useBlacklist());
-      vi.clearAllMocks(); // clear the initial mount call
+      await waitFor(() => expect(result.current.loading).toBe(false));
       act(() => result.current.add(''));
-      expect(result.current.items).toHaveLength(0);
-      expect(mockSaveBlacklist).not.toHaveBeenCalled();
+      expect(mockAddItem).not.toHaveBeenCalled();
     });
 
-    it('silently ignores whitespace-only string', () => {
+    it('silently ignores whitespace-only string', async () => {
       const { result } = renderHook(() => useBlacklist());
-      vi.clearAllMocks();
+      await waitFor(() => expect(result.current.loading).toBe(false));
       act(() => result.current.add('   '));
-      expect(result.current.items).toHaveLength(0);
-      expect(mockSaveBlacklist).not.toHaveBeenCalled();
+      expect(mockAddItem).not.toHaveBeenCalled();
     });
 
-    it('silently ignores exact duplicate', () => {
+    it('silently ignores exact duplicate', async () => {
+      mockGetBlacklist.mockResolvedValue(['peanuts']);
       const { result } = renderHook(() => useBlacklist());
-      act(() => result.current.add('peanuts')); // first add triggers save
+      await waitFor(() => expect(result.current.items).toContain('peanuts'));
       vi.clearAllMocks();
-      act(() => result.current.add('peanuts')); // duplicate should NOT trigger save
-      expect(result.current.items).toHaveLength(1);
-      expect(mockSaveBlacklist).not.toHaveBeenCalled();
+      act(() => result.current.add('peanuts'));
+      expect(mockAddItem).not.toHaveBeenCalled();
     });
 
-    it('deduplicates case-insensitively', () => {
-      mockGetBlacklist.mockReturnValue(['peanuts']);
+    it('deduplicates case-insensitively', async () => {
+      mockGetBlacklist.mockResolvedValue(['peanuts']);
       const { result } = renderHook(() => useBlacklist());
-      act(() => {
-        result.current.add('peanuts');
-      });
+      await waitFor(() => expect(result.current.items).toContain('peanuts'));
       act(() => result.current.add('PEANUTS'));
       expect(result.current.items).toHaveLength(1);
-    });
-
-    it('calls saveBlacklist with the updated array', () => {
-      const { result } = renderHook(() => useBlacklist());
-      vi.clearAllMocks(); // clear mount call
-      act(() => result.current.add('gluten'));
-      expect(mockSaveBlacklist).toHaveBeenCalledWith(['gluten']);
     });
   });
 
   describe('remove', () => {
-    it('removes the matching ingredient', () => {
-      mockGetBlacklist.mockReturnValue(['peanuts', 'dairy']);
+    it('calls removeItem with normalized ingredient', async () => {
+      mockGetBlacklist.mockResolvedValue(['peanuts', 'dairy']);
       const { result } = renderHook(() => useBlacklist());
-      act(() => {
-        result.current.add('peanuts');
-        result.current.add('dairy');
-      });
+      await waitFor(() => expect(result.current.items).toContain('peanuts'));
+      await act(async () => result.current.remove('PEANUTS'));
+      expect(mockRemoveItem).toHaveBeenCalledWith('user-123', 'peanuts');
+    });
+
+    it('optimistically removes from state', async () => {
+      mockGetBlacklist.mockResolvedValue(['peanuts', 'dairy']);
+      const { result } = renderHook(() => useBlacklist());
+      await waitFor(() => expect(result.current.items).toContain('peanuts'));
       act(() => result.current.remove('peanuts'));
       expect(result.current.items).not.toContain('peanuts');
       expect(result.current.items).toContain('dairy');
     });
 
-    it('calls saveBlacklist with the filtered array', () => {
-      mockGetBlacklist.mockReturnValue(['peanuts']);
+    it('does nothing if item is not in the list', async () => {
+      mockGetBlacklist.mockResolvedValue(['peanuts']);
       const { result } = renderHook(() => useBlacklist());
-      vi.clearAllMocks(); // clear mount call
-      act(() => result.current.remove('peanuts'));
-      expect(mockSaveBlacklist).toHaveBeenCalledWith([]);
-    });
-
-    it('does nothing if item is not in the list', () => {
-      mockGetBlacklist.mockReturnValue(['peanuts']);
-      const { result } = renderHook(() => useBlacklist());
-      act(() => {
-        result.current.add('peanuts');
-      });
+      await waitFor(() => expect(result.current.items).toContain('peanuts'));
       act(() => result.current.remove('gluten'));
       expect(result.current.items).toEqual(['peanuts']);
     });
 
-    it('removes case-insensitively (normalizes input)', () => {
-      mockGetBlacklist.mockReturnValue(['peanuts']);
+    it('removes case-insensitively (normalizes input)', async () => {
+      mockGetBlacklist.mockResolvedValue(['peanuts']);
       const { result } = renderHook(() => useBlacklist());
-      act(() => {
-        result.current.add('peanuts');
-      });
+      await waitFor(() => expect(result.current.items).toContain('peanuts'));
       act(() => result.current.remove('PEANUTS'));
       expect(result.current.items).not.toContain('peanuts');
-      expect(result.current.items).toHaveLength(0);
-    });
-
-    it('does not call saveBlacklist when item is not in the list', () => {
-      mockGetBlacklist.mockReturnValue(['peanuts']);
-      const { result } = renderHook(() => useBlacklist());
-      act(() => {
-        result.current.add('peanuts');
-      });
-      vi.clearAllMocks();
-      act(() => result.current.remove('gluten'));
-      expect(mockSaveBlacklist).not.toHaveBeenCalled();
     });
   });
 
-  it('does not save an empty blacklist before hydration completes', async () => {
-    mockGetBlacklist.mockReturnValue(['nuts']);
-    renderHook(() => useBlacklist());
-    await waitFor(() => {
-      expect(mockSaveBlacklist).toHaveBeenCalledWith(['nuts']);
+  describe('when user is null', () => {
+    beforeEach(() => {
+      mockUseAuth.mockReturnValue({ user: null, signOut: vi.fn() });
     });
-    expect(mockSaveBlacklist).not.toHaveBeenCalledWith([]);
+
+    it('returns empty items', () => {
+      const { result } = renderHook(() => useBlacklist());
+      expect(result.current.items).toEqual([]);
+    });
+
+    it('does not call getBlacklist', () => {
+      renderHook(() => useBlacklist());
+      expect(mockGetBlacklist).not.toHaveBeenCalled();
+    });
+
+    it('add is a no-op (does not call addItem)', () => {
+      const { result } = renderHook(() => useBlacklist());
+      act(() => result.current.add('peanuts'));
+      expect(mockAddItem).not.toHaveBeenCalled();
+      expect(result.current.items).toEqual([]);
+    });
+
+    it('remove is a no-op (does not call removeItem)', () => {
+      const { result } = renderHook(() => useBlacklist());
+      act(() => result.current.remove('peanuts'));
+      expect(mockRemoveItem).not.toHaveBeenCalled();
+    });
   });
 });

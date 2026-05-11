@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getBlacklist, getHistory } from '@/lib/storage';
+import { getBlacklist } from '@/lib/db/blacklist';
+import { getHistory } from '@/lib/db/history';
+import { useAuth } from '@/lib/hooks/useAuth';
 import type { ScanRecord } from '@/lib/types';
 
 /** Formats a dish summary line, e.g. "5 dishes · 2 High · 1 Medium · 2 Safe" */
@@ -22,17 +24,26 @@ function formatDate(iso: string): string {
 }
 
 export default function HomeClient() {
+  const { user } = useAuth();
   const [loaded, setLoaded] = useState(false);
   const [blacklistEmpty, setBlacklistEmpty] = useState(false);
   const [recentRecord, setRecentRecord] = useState<ScanRecord | null>(null);
 
   useEffect(() => {
-    const blacklist = getBlacklist();
-    const history = getHistory();
-    setBlacklistEmpty(blacklist.length === 0);
-    setRecentRecord(history.length > 0 ? history[0] : null);
-    setLoaded(true);
-  }, []);
+    if (!user) return;
+
+    async function load() {
+      const [blacklist, history] = await Promise.all([
+        getBlacklist(user!.id),
+        getHistory(user!.id),
+      ]);
+      setBlacklistEmpty(blacklist.length === 0);
+      setRecentRecord(history.length > 0 ? history[0] : null);
+      setLoaded(true);
+    }
+
+    load();
+  }, [user]);
 
   if (!loaded) return null;
 

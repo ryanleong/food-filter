@@ -3,15 +3,19 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import IngredientsPage from '@/app/ingredients/page';
 import { BlacklistProvider } from '@/app/providers';
-import * as storage from '@/lib/storage';
 
-// Mock storage so tests start with a clean slate
-vi.mock('@/lib/storage', () => ({
-  getBlacklist: vi.fn(),
-  saveBlacklist: vi.fn(),
+const mockGetBlacklist = vi.hoisted(() => vi.fn<() => Promise<string[]>>());
+const mockAddItem = vi.hoisted(() => vi.fn<() => Promise<void>>());
+const mockRemoveItem = vi.hoisted(() => vi.fn<() => Promise<void>>());
+
+vi.mock('@/lib/db/blacklist', () => ({
+  getBlacklist: mockGetBlacklist,
+  addItem: mockAddItem,
+  removeItem: mockRemoveItem,
 }));
 
-const mockGetBlacklist = vi.mocked(storage.getBlacklist);
+const mockUseAuth = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/hooks/useAuth', () => ({ useAuth: mockUseAuth }));
 
 // Render the page inside the real BlacklistProvider backed by mocked storage
 function renderPage() {
@@ -25,7 +29,10 @@ function renderPage() {
 describe('IngredientsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetBlacklist.mockReturnValue([]);
+    mockGetBlacklist.mockResolvedValue([]);
+    mockAddItem.mockResolvedValue(undefined);
+    mockRemoveItem.mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({ user: { id: 'test-user' }, signOut: vi.fn() });
   });
 
   it('renders the page heading', () => {
@@ -58,9 +65,9 @@ describe('IngredientsPage', () => {
   });
 
   it('removes an ingredient when × is clicked', async () => {
-    mockGetBlacklist.mockReturnValue(['peanuts']);
+    mockGetBlacklist.mockResolvedValue(['peanuts']);
     renderPage();
-    await userEvent.click(screen.getByRole('button', { name: 'Remove peanuts' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Remove peanuts' }));
     expect(screen.queryByText('peanuts')).not.toBeInTheDocument();
     expect(screen.getByText(/no ingredients yet/i)).toBeInTheDocument();
   });
@@ -79,8 +86,8 @@ describe('IngredientsPage', () => {
     expect(screen.getByText('1 ingredient')).toBeInTheDocument();
   });
 
-  it('pre-populates with existing blacklist from storage', async () => {
-    mockGetBlacklist.mockReturnValue(['dairy', 'eggs']);
+  it('pre-populates with existing blacklist from DB', async () => {
+    mockGetBlacklist.mockResolvedValue(['dairy', 'eggs']);
     renderPage();
     expect(await screen.findByText('dairy')).toBeInTheDocument();
     expect(await screen.findByText('eggs')).toBeInTheDocument();

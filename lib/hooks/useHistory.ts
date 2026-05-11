@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { clearHistory, deleteScanRecord, getHistory } from '@/lib/storage';
-import { isScanRecord } from '@/lib/scan-records';
+import { useAuth } from '@/lib/hooks/useAuth';
+import {
+  clearHistory,
+  deleteRecord,
+  getHistory,
+  getRecord,
+} from '@/lib/db/history';
 import type { ScanRecord } from '@/lib/types';
 
 export interface UseHistoryReturn {
@@ -19,21 +24,31 @@ export interface UseHistoryRecordReturn {
 }
 
 export function useHistory(): UseHistoryReturn {
+  const { user } = useAuth();
   const [records, setRecords] = useState<ScanRecord[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    setRecords(getHistory().filter((record) => isScanRecord(record)));
-    setLoaded(true);
-  }, []);
+    if (!user) {
+      setRecords([]);
+      setLoaded(true);
+      return;
+    }
+    getHistory(user.id).then((data) => {
+      setRecords(data);
+      setLoaded(true);
+    });
+  }, [user]);
 
   function removeRecord(id: string): void {
-    deleteScanRecord(id);
+    if (!user) return;
+    void deleteRecord(user.id, id);
     setRecords((current) => current.filter((record) => record.id !== id));
   }
 
   function removeAll(): void {
-    clearHistory();
+    if (!user) return;
+    void clearHistory(user.id);
     setRecords([]);
   }
 
@@ -47,23 +62,25 @@ export function useHistory(): UseHistoryReturn {
 
 export function useHistoryRecord(id: string): UseHistoryRecordReturn {
   const router = useRouter();
+  const { user } = useAuth();
   const [record, setRecord] = useState<ScanRecord | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const foundRecord = getHistory()
-      .filter((entry) => isScanRecord(entry))
-      .find((entry) => entry.id === id);
-
-    if (!foundRecord) {
-      router.push('/history');
+    if (!user) {
+      setLoaded(true);
       return;
     }
-
-    setRecord(foundRecord);
-    setLoaded(true);
+    getRecord(user.id, id).then((found) => {
+      if (!found) {
+        router.push('/history');
+        return;
+      }
+      setRecord(found);
+      setLoaded(true);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  }, [id, user]);
 
   return { record, loaded };
 }

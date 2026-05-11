@@ -3,12 +3,19 @@ import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ScanPage from '@/app/scan/page';
 import { BlacklistProvider } from '@/app/providers';
-import * as storage from '@/lib/storage';
 
-vi.mock('@/lib/storage', () => ({
-  getBlacklist: vi.fn(),
-  saveBlacklist: vi.fn(),
+const mockGetBlacklist = vi.hoisted(() => vi.fn<() => Promise<string[]>>());
+const mockAddItem = vi.hoisted(() => vi.fn<() => Promise<void>>());
+const mockRemoveItem = vi.hoisted(() => vi.fn<() => Promise<void>>());
+
+vi.mock('@/lib/db/blacklist', () => ({
+  getBlacklist: mockGetBlacklist,
+  addItem: mockAddItem,
+  removeItem: mockRemoveItem,
 }));
+
+const mockUseAuth = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/hooks/useAuth', () => ({ useAuth: mockUseAuth }));
 
 vi.mock('@/lib/hooks/useAnalyze', () => ({
   useAnalyze: () => ({
@@ -18,8 +25,6 @@ vi.mock('@/lib/hooks/useAnalyze', () => ({
     reset: vi.fn(),
   }),
 }));
-
-const mockGetBlacklist = vi.mocked(storage.getBlacklist);
 
 function renderPage() {
   return render(
@@ -39,7 +44,10 @@ function setOnlineState(isOnline: boolean) {
 describe('ScanPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetBlacklist.mockReturnValue(['peanuts']);
+    mockGetBlacklist.mockResolvedValue(['peanuts']);
+    mockAddItem.mockResolvedValue(undefined);
+    mockRemoveItem.mockResolvedValue(undefined);
+    mockUseAuth.mockReturnValue({ user: { id: 'test-user' }, signOut: vi.fn() });
     setOnlineState(true);
 
     vi.stubGlobal('URL', {
@@ -54,7 +62,7 @@ describe('ScanPage', () => {
   });
 
   it('shows an inline warning when the blacklist is empty', () => {
-    mockGetBlacklist.mockReturnValue([]);
+    mockGetBlacklist.mockResolvedValue([]);
     renderPage();
 
     expect(screen.getByText(/your ingredient list is empty/i)).toBeInTheDocument();
