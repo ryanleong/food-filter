@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useId } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RiskBadge } from '@/components/RiskBadge';
 import { cn } from '@/lib/utils';
 import type { DishResult, IngredientSource } from '@/lib/types';
@@ -11,9 +10,15 @@ interface DishCardProps {
 }
 
 const SOURCE_LABELS: Record<IngredientSource, string> = {
-  menu:  'Source: menu text',
-  model: 'Source: AI knowledge',
-  both:  'Source: menu + AI knowledge',
+  menu:  'Sourced from menu text',
+  model: 'Sourced from AI knowledge',
+  both:  'Sourced from menu + AI knowledge',
+};
+
+const BORDER_COLORS: Record<string, string> = {
+  high:   'border-l-red-500',
+  medium: 'border-l-amber-500',
+  low:    'border-l-green-500',
 };
 
 export function DishCard({ dish }: DishCardProps) {
@@ -24,19 +29,25 @@ export function DishCard({ dish }: DishCardProps) {
   const showBlacklisted = riskLevel !== 'low' && blacklistedFound.length > 0;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-base font-semibold break-words">{name}</CardTitle>
-        <RiskBadge level={riskLevel} />
-      </CardHeader>
-      <CardContent className="space-y-2">
+    <div
+      className={cn(
+        'bg-card rounded-xl border border-border border-l-4 shadow-sm overflow-hidden',
+        BORDER_COLORS[riskLevel],
+      )}
+    >
+      <div className="px-4 pt-4 pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="font-display text-base font-semibold break-words text-foreground leading-snug">
+            {name}
+          </h3>
+          <RiskBadge level={riskLevel} />
+        </div>
+
         {showBlacklisted && (
           <p
             className={cn(
-              'text-sm font-medium break-words',
-              riskLevel === 'high'
-                ? 'text-red-600 dark:text-red-400'
-                : 'text-amber-600 dark:text-amber-400',
+              'mt-2 text-sm font-medium break-words',
+              riskLevel === 'high' ? 'text-red-600' : 'text-amber-600',
             )}
           >
             Contains: {blacklistedFound.join(', ')}
@@ -44,11 +55,11 @@ export function DishCard({ dish }: DishCardProps) {
         )}
 
         {expanded && (
-          <div id={expandableId}>
+          <div id={expandableId} className="mt-3 space-y-1.5">
             <p className="text-sm text-muted-foreground break-words">
               {allIngredients.join(', ')}
             </p>
-            <p className="mt-2 text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground/70">
               {SOURCE_LABELS[source]}
             </p>
           </div>
@@ -59,13 +70,13 @@ export function DishCard({ dish }: DishCardProps) {
           onClick={() => setExpanded((prev) => !prev)}
           aria-expanded={expanded}
           aria-controls={expandableId}
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
+          className="mt-2 text-xs text-primary hover:text-primary/80 transition-colors font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
         >
           {expanded
             ? 'Hide ingredients'
             : `Show all ingredients (${allIngredients.length})`}
         </button>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

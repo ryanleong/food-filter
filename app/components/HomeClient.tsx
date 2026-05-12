@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ShieldCheck, ScanLine } from 'lucide-react';
 import { getBlacklist } from '@/lib/db/blacklist';
 import { getHistory } from '@/lib/db/history';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -26,7 +27,8 @@ function formatDate(iso: string): string {
 export default function HomeClient() {
   const { user } = useAuth();
   const [loaded, setLoaded] = useState(false);
-  const [blacklistEmpty, setBlacklistEmpty] = useState(false);
+  const [blacklistCount, setBlacklistCount] = useState(0);
+  const [totalScans, setTotalScans] = useState(0);
   const [recentRecord, setRecentRecord] = useState<ScanRecord | null>(null);
 
   useEffect(() => {
@@ -37,7 +39,8 @@ export default function HomeClient() {
         getBlacklist(user!.id),
         getHistory(user!.id),
       ]);
-      setBlacklistEmpty(blacklist.length === 0);
+      setBlacklistCount(blacklist.length);
+      setTotalScans(history.length);
       setRecentRecord(history.length > 0 ? history[0] : null);
       setLoaded(true);
     }
@@ -47,31 +50,51 @@ export default function HomeClient() {
 
   if (!loaded) return null;
 
+  const blacklistEmpty = blacklistCount === 0;
+
   return (
     <div className="flex flex-col gap-4">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-4 flex flex-col gap-2">
+          <ShieldCheck className="w-5 h-5 opacity-70" />
+          <span className="font-display text-3xl font-bold leading-none">{blacklistCount}</span>
+          <span className="text-xs text-muted-foreground font-sans">ingredients blocked</span>
+        </div>
+        <div className="bg-secondary text-secondary-foreground rounded-xl px-4 py-4 flex flex-col gap-2">
+          <ScanLine className="w-5 h-5 opacity-70" />
+          <span className="font-display text-3xl font-bold leading-none">{totalScans}</span>
+          <span className="text-xs text-muted-foreground font-sans">total scans</span>
+        </div>
+      </div>
+
+      {/* Empty blacklist nudge */}
       {blacklistEmpty && (
-        <div className="rounded-lg border bg-muted/50 px-4 py-3 text-sm">
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 font-sans">
           Start by adding ingredients you want to avoid.{' '}
-          <Link href="/ingredients" className="font-medium underline underline-offset-4">
+          <Link href="/ingredients" className="font-semibold underline underline-offset-4">
             Manage Ingredients
           </Link>
         </div>
       )}
 
+      {/* Recent scan card */}
       {recentRecord && (
-        <div className="rounded-lg border px-4 py-3 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
-              Recent Scan
+        <div className="bg-card border border-border rounded-xl px-4 py-4 flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-0.5">
+            <p className="text-xs text-muted-foreground font-sans font-medium uppercase tracking-wide">
+              Latest Scan
             </p>
-            <p className="text-sm font-medium">{formatDate(recentRecord.createdAt)}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="font-display font-semibold text-base text-foreground">
+              {formatDate(recentRecord.createdAt)}
+            </p>
+            <p className="text-xs text-muted-foreground font-sans mt-0.5">
               {formatSummary(recentRecord.dishes)}
             </p>
           </div>
           <Link
             href={`/history/${recentRecord.id}`}
-            className="shrink-0 text-sm font-medium underline underline-offset-4"
+            className="shrink-0 text-sm font-medium text-primary font-sans"
           >
             View
           </Link>

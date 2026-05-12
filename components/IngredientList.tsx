@@ -11,16 +11,16 @@ export function IngredientList() {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
-        <UtensilsCrossed size={40} strokeWidth={1.5} />
+        <UtensilsCrossed size={36} strokeWidth={1.5} />
         <p className="text-sm">No ingredients yet. Add one above to get started.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <p className="text-sm text-muted-foreground">
-        {items.length} {items.length === 1 ? 'ingredient' : 'ingredients'}
+        {items.length} {items.length === 1 ? 'ingredient' : 'ingredients'} blocked
       </p>
       <div className="flex flex-wrap gap-2">
         {sorted.map((name) => (

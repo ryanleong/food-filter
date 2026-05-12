@@ -57,4 +57,10 @@ describe('BottomNav', () => {
     const homeLink = screen.getByRole('link', { name: /home/i });
     expect(homeLink).not.toHaveClass('text-primary');
   });
+
+  it('has lg:hidden class on the root nav element so it hides on desktop', () => {
+    render(<BottomNav />);
+    const nav = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(nav).toHaveClass('lg:hidden');
+  });
 });

@@ -5,24 +5,23 @@ interface RiskBadgeProps {
   level: RiskLevel;
 }
 
-const RISK_CONFIG: Record<RiskLevel, { icon: string; text: string; className: string }> = {
-  high:   { icon: '⚠', text: 'High Risk',   className: 'bg-red-600 text-white' },
-  medium: { icon: '⚡', text: 'Medium Risk', className: 'bg-amber-400 text-amber-900' },
-  low:    { icon: '✓',  text: 'Safe',        className: 'bg-green-600 text-white' },
+const RISK_CONFIG: Record<RiskLevel, { label: string; className: string }> = {
+  high:   { label: 'High Risk',   className: 'bg-red-100 text-red-700 ring-1 ring-red-200' },
+  medium: { label: 'Medium Risk', className: 'bg-amber-100 text-amber-700 ring-1 ring-amber-200' },
+  low:    { label: 'Safe',        className: 'bg-green-100 text-green-700 ring-1 ring-green-200' },
 };
 
 export function RiskBadge({ level }: RiskBadgeProps) {
-  const { icon, text, className } = RISK_CONFIG[level];
+  const { label, className } = RISK_CONFIG[level];
   return (
     <span
       data-testid="risk-badge"
       className={cn(
-        'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap inline-flex items-center gap-1',
+        'rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap shrink-0',
         className,
       )}
     >
-      <span aria-hidden="true">{icon}</span>
-      {text}
+      {label}
     </span>
   );
 }

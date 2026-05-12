@@ -114,7 +114,7 @@ export async function analyzeMenu(
     const prompt = buildPrompt(blacklist);
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-flash-lite-preview",
+      model: "gemini-3.1-flash-lite-preview", // From May 25 2026 use: "gemini-3.1-flash-lite"
       contents: [
         {
           role: "user",

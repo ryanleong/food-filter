@@ -3,9 +3,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 type Tab = 'password' | 'magic-link';
 type Mode = 'sign-in' | 'create-account';
@@ -105,152 +102,169 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="w-full max-w-md rounded-lg border bg-card p-8 shadow-sm">
-        <h1 className="mb-6 text-2xl font-bold tracking-tight">FoodFilter</h1>
+    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
+      {/* Brand */}
+      <div className="mb-8 text-center">
+        <h1 className="font-display text-4xl font-semibold text-primary tracking-tight">FoodFilter</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Filter menus. Eat safely.</p>
+      </div>
 
+      {/* Card */}
+      <div className="w-full max-w-sm bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         {/* Tab switcher */}
-        <div className="mb-6 flex gap-4 border-b">
-          <button
-            type="button"
-            onClick={() => {
-              setTab('password');
-              setMlError(null);
-              setMlSent(false);
-            }}
-            className={`pb-2 text-sm font-medium transition-colors ${
-              tab === 'password'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Password
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab('magic-link');
-              clearMessages();
-            }}
-            className={`pb-2 text-sm font-medium transition-colors ${
-              tab === 'magic-link'
-                ? 'border-b-2 border-primary text-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Magic link
-          </button>
+        <div className="flex border-b border-border">
+          {(['password', 'magic-link'] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                setTab(id);
+                if (id === 'magic-link') { setMlError(null); setMlSent(false); }
+                else clearMessages();
+              }}
+              className={`flex-1 py-3.5 text-sm font-medium transition-colors ${
+                tab === id
+                  ? 'text-primary border-b-2 border-primary -mb-px'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {id === 'password' ? 'Password' : 'Magic Link'}
+            </button>
+          ))}
         </div>
 
-        {tab === 'password' && (
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-
-            {mode === 'create-account' && (
+        <div className="p-6">
+          {tab === 'password' ? (
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
               <div className="flex flex-col gap-1.5">
-                <Label htmlFor="confirm-password">Confirm password</Label>
-                <Input
-                  id="confirm-password"
-                  type="password"
-                  autoComplete="new-password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-              </div>
-            )}
-
-            {error && (
-              <p role="alert" className="text-sm font-medium text-destructive">
-                {error}
-              </p>
-            )}
-
-            {success && (
-              <p role="status" className="text-sm font-medium text-green-600">
-                {success}
-              </p>
-            )}
-
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Loading…' : mode === 'sign-in' ? 'Sign in' : 'Create account'}
-            </Button>
-
-            {mode === 'sign-in' && (
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="self-start text-sm text-muted-foreground hover:underline"
-              >
-                Forgot password?
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={toggleMode}
-              className="text-sm text-muted-foreground hover:underline"
-            >
-              {mode === 'sign-in'
-                ? "Don't have an account? Create one"
-                : 'Already have an account? Sign in'}
-            </button>
-          </form>
-        )}
-
-        {tab === 'magic-link' && (
-          mlSent ? (
-            <p role="status" className="text-sm font-medium text-green-600">
-              Check your inbox for a sign-in link
-            </p>
-          ) : (
-            <form onSubmit={handleMagicLink} className="flex flex-col gap-4" noValidate>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="ml-email">Email</Label>
-                <Input
-                  id="ml-email"
+                <label htmlFor="email" className="text-sm font-medium text-foreground">Email</label>
+                <input
+                  id="email"
                   type="email"
                   autoComplete="email"
-                  value={mlEmail}
-                  onChange={(e) => setMlEmail(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
                   required
+                  className="border border-border bg-background rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-colors"
                 />
               </div>
 
-              {mlError && (
-                <p role="alert" className="text-sm font-medium text-destructive">
-                  {mlError}
-                </p>
+              <div className="flex flex-col gap-1.5">
+                <label htmlFor="password" className="text-sm font-medium text-foreground">Password</label>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="border border-border bg-background rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-colors"
+                />
+              </div>
+
+              {mode === 'create-account' && (
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="confirm-password" className="text-sm font-medium text-foreground">Confirm password</label>
+                  <input
+                    id="confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    required
+                    className="border border-border bg-background rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-colors"
+                  />
+                </div>
               )}
 
-              <Button type="submit" disabled={mlLoading} className="w-full">
-                {mlLoading ? 'Loading…' : 'Send sign-in link'}
-              </Button>
+              {error && (
+                <p role="alert" className="text-sm font-medium text-destructive">{error}</p>
+              )}
+              {success && (
+                <p role="status" className="text-sm font-medium text-green-600">{success}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                {loading ? 'Loading…' : mode === 'sign-in' ? 'Sign In' : 'Create Account'}
+              </button>
+
+              {mode === 'sign-in' && (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="self-start text-sm text-muted-foreground hover:text-foreground hover:underline transition-colors"
+                >
+                  Forgot password?
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={toggleMode}
+                className="text-sm text-center text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {mode === 'sign-in'
+                  ? "Don't have an account? "
+                  : 'Already have an account? '}
+                <span className="text-primary font-medium hover:underline">
+                  {mode === 'sign-in' ? 'Create one' : 'Sign in'}
+                </span>
+              </button>
             </form>
-          )
-        )}
+          ) : (
+            mlSent ? (
+              <div className="text-center py-4 space-y-2">
+                <p className="font-display text-lg font-semibold text-foreground">Check your inbox</p>
+                <p className="text-sm text-muted-foreground">
+                  We sent a magic link to <strong>{mlEmail}</strong>.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setMlSent(false); setMlEmail(''); }}
+                  className="mt-2 text-sm text-primary hover:underline"
+                >
+                  Use a different email
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleMagicLink} className="flex flex-col gap-4" noValidate>
+                <p className="text-sm text-muted-foreground text-center">
+                  We'll send a one-click sign-in link to your email.
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  <label htmlFor="ml-email" className="text-sm font-medium text-foreground">Email</label>
+                  <input
+                    id="ml-email"
+                    type="email"
+                    autoComplete="email"
+                    value={mlEmail}
+                    onChange={(e) => setMlEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    className="border border-border bg-background rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-primary transition-colors"
+                  />
+                </div>
+                {mlError && (
+                  <p role="alert" className="text-sm font-medium text-destructive">{mlError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={mlLoading}
+                  className="w-full h-11 bg-primary text-primary-foreground rounded-lg font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                >
+                  {mlLoading ? 'Sending…' : 'Send Magic Link'}
+                </button>
+              </form>
+            )
+          )}
+        </div>
       </div>
     </div>
   );

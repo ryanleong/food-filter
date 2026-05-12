@@ -2,15 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { House, Camera, Clock, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const NAV_ITEMS = [
-  { href: '/', label: 'Home', icon: House, exact: true },
-  { href: '/scan', label: 'Scan', icon: Camera, exact: false },
-  { href: '/history', label: 'History', icon: Clock, exact: false },
-  { href: '/ingredients', label: 'Ingredients', icon: ListChecks, exact: false },
-] as const;
+import { NAV_ITEMS } from '@/lib/nav';
 
 const BottomNav = () => {
   const pathname = usePathname();
@@ -18,7 +11,7 @@ const BottomNav = () => {
   return (
     <nav
       aria-label="Main navigation"
-      className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t bg-background"
+      className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t border-border bg-card lg:hidden"
     >
       <ul className="flex h-full items-stretch">
         {NAV_ITEMS.map(({ href, label, icon: Icon, exact }) => {
@@ -29,10 +22,10 @@ const BottomNav = () => {
                 href={href}
                 aria-current={isActive ? 'page' : undefined}
                 className={cn(
-                  'flex flex-1 flex-col items-center justify-center gap-1 text-xs min-h-[44px]',
+                  'flex flex-1 flex-col items-center justify-center gap-0.5 text-xs min-h-[44px] transition-colors',
                   isActive
                     ? 'text-primary font-semibold'
-                    : 'text-muted-foreground'
+                    : 'text-muted-foreground hover:text-foreground',
                 )}
               >
                 <Icon size={20} aria-hidden="true" />

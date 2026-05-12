@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useResults } from '@/lib/hooks/useResults';
 import { ScanResultsSection } from '@/components/ScanResultsSection';
-import { Button } from '@/components/ui/button';
 
 export function ResultsClient() {
   const { record, loaded } = useResults();
@@ -12,19 +11,20 @@ export function ResultsClient() {
     return null;
   }
 
+  const scanButton = (
+    <Link
+      href="/scan"
+      className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
+    >
+      Scan Another Menu
+    </Link>
+  );
+
   return (
     <ScanResultsSection
       record={record}
-      topAction={
-        <Button asChild variant="default">
-          <Link href="/scan">Scan Another Menu</Link>
-        </Button>
-      }
-      bottomAction={
-        <Button asChild variant="default">
-          <Link href="/scan">Scan Another Menu</Link>
-        </Button>
-      }
+      topAction={scanButton}
+      bottomAction={scanButton}
     />
   );
 }

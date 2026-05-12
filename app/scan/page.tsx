@@ -9,10 +9,10 @@ export const metadata: Metadata = {
 export default function ScanPage() {
   return (
     <main className="min-h-screen">
-      <div className="container mx-auto max-w-3xl px-4 py-10">
+      <div className="mx-auto max-w-2xl px-4 py-8">
         <div className="flex flex-col gap-8">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Scan a Menu</h1>
+            <h1 className="font-display text-3xl font-semibold">Scan a Menu</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Capture a fresh photo or upload an existing menu image before running analysis.
             </p>

@@ -1,7 +1,6 @@
 'use client';
 
 import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface IngredientPillProps {
   name: string;
@@ -10,20 +9,15 @@ interface IngredientPillProps {
 
 export function IngredientPill({ name, onRemove }: IngredientPillProps) {
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 rounded-full border bg-muted px-3 py-1 text-sm',
-        'transition-colors hover:bg-muted/80',
-      )}
-    >
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary text-secondary-foreground px-3 py-1 text-sm font-medium">
       <span className="break-words">{name}</span>
       <button
         type="button"
         aria-label={`Remove ${name}`}
         onClick={() => onRemove(name)}
-        className="flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring p-[15px] -m-[15px]"
+        className="flex items-center justify-center rounded-full text-secondary-foreground/60 hover:text-secondary-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring p-[14px] -m-[14px]"
       >
-        <X size={14} />
+        <X size={13} />
       </button>
     </span>
   );
