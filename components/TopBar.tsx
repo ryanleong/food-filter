@@ -12,10 +12,15 @@ import { NAV_ITEMS } from '@/lib/nav';
 const TopBar = () => {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Prevent hydration mismatch: the server renders user=null, but the client reads
+  // the session from cookies. Only render user-dependent UI after mount.
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -73,7 +78,7 @@ const TopBar = () => {
 
         {/* Right: Account menu */}
         <div className="flex items-center justify-end">
-          {user && (
+          {mounted && user && (
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"

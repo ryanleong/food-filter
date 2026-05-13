@@ -1,218 +1,86 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import LoginPage from '@/app/(auth)/login/page';
+import LoginClient from '@/app/(auth)/login/LoginClient';
 
 // --- Mocks ---
 
-const mockSignInWithPassword = vi.hoisted(() => vi.fn());
-const mockSignUp = vi.hoisted(() => vi.fn());
-const mockResetPasswordForEmail = vi.hoisted(() => vi.fn());
-const mockSignInWithOtp = vi.hoisted(() => vi.fn());
+const mockSignInWithOAuth = vi.hoisted(() => vi.fn());
 
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {
-      signInWithPassword: mockSignInWithPassword,
-      signUp: mockSignUp,
-      resetPasswordForEmail: mockResetPasswordForEmail,
-      signInWithOtp: mockSignInWithOtp,
+      signInWithOAuth: mockSignInWithOAuth,
     },
   }),
 }));
 
-const mockPush = vi.hoisted(() => vi.fn());
+const mockSearchParamsGet = vi.hoisted(() => vi.fn());
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => ({ get: mockSearchParamsGet }),
 }));
 
 // --- Helpers ---
 
 function setup() {
   const user = userEvent.setup();
-  render(<LoginPage />);
+  render(<LoginClient />);
   return { user };
-}
-
-async function fillSignInForm(user: ReturnType<typeof userEvent.setup>, email = 'test@example.com', password = 'password123') {
-  await user.type(screen.getByLabelText(/email/i), email);
-  await user.type(screen.getByLabelText(/^password$/i), password);
 }
 
 // --- Tests ---
 
-describe('LoginPage', () => {
+describe('LoginClient (Google Sign-In)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockSearchParamsGet.mockReturnValue(null);
   });
 
-  // 1. Renders email and password fields in sign-in mode by default
-  it('renders email and password fields in sign-in mode by default', () => {
+  // Cycle 1: button renders
+  it('renders a "Continue with Google" button', () => {
     setup();
-
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/confirm password/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /continue with google/i })).toBeInTheDocument();
   });
 
-  // 2. Submitting valid credentials calls signInWithPassword and redirects
-  it('calls signInWithPassword and redirects to /dashboard on success', async () => {
-    mockSignInWithPassword.mockResolvedValueOnce({ error: null });
+  // Cycle 2: brand header
+  it('renders the FoodFilter brand header and tagline', () => {
+    setup();
+    expect(screen.getByText('FoodFilter')).toBeInTheDocument();
+    expect(screen.getByText(/filter menus\. eat safely\./i)).toBeInTheDocument();
+  });
+
+  // Cycle 3: click calls signInWithOAuth with correct provider and redirectTo
+  it('calls signInWithOAuth with google provider and /auth/callback redirectTo on click', async () => {
+    mockSignInWithOAuth.mockResolvedValueOnce({ data: {}, error: null });
     const { user } = setup();
 
-    await fillSignInForm(user);
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
+    await user.click(screen.getByRole('button', { name: /continue with google/i }));
 
     await waitFor(() => {
-      expect(mockSignInWithPassword).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123',
-      });
-      expect(mockPush).toHaveBeenCalledWith('/dashboard');
-    });
-  });
-
-  // 3. Supabase error shows inline error message
-  it('shows inline error when signInWithPassword returns an error', async () => {
-    mockSignInWithPassword.mockResolvedValueOnce({ error: { message: 'Invalid login credentials' } });
-    const { user } = setup();
-
-    await fillSignInForm(user);
-    await user.click(screen.getByRole('button', { name: /sign in/i }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Invalid login credentials');
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  // 4. "Create account" toggle shows confirm-password field
-  it('shows confirm-password field after toggling to create-account mode', async () => {
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /don't have an account/i }));
-
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /create account/i })).toBeInTheDocument();
-  });
-
-  // 5. Mismatched passwords shows validation error without calling Supabase
-  it('shows validation error for mismatched passwords without calling Supabase', async () => {
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /don't have an account/i }));
-    await user.type(screen.getByLabelText(/email/i), 'new@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'password123');
-    await user.type(screen.getByLabelText(/confirm password/i), 'different456');
-    await user.click(screen.getByRole('button', { name: /create account/i }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(/passwords do not match/i);
-    expect(mockSignUp).not.toHaveBeenCalled();
-  });
-
-  // 6. Successful sign-up shows "Check your email" message without redirecting
-  it('shows check-your-email message on successful sign-up without redirecting', async () => {
-    mockSignUp.mockResolvedValueOnce({ error: null });
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /don't have an account/i }));
-    await user.type(screen.getByLabelText(/email/i), 'new@example.com');
-    await user.type(screen.getByLabelText(/^password$/i), 'password123');
-    await user.type(screen.getByLabelText(/confirm password/i), 'password123');
-    await user.click(screen.getByRole('button', { name: /create account/i }));
-
-    expect(await screen.findByRole('status')).toHaveTextContent(/check your email/i);
-    expect(mockPush).not.toHaveBeenCalled();
-  });
-
-  // 7. "Forgot password?" triggers resetPasswordForEmail and shows confirmation
-  it('calls resetPasswordForEmail and shows confirmation on forgot password', async () => {
-    mockResetPasswordForEmail.mockResolvedValueOnce({ error: null });
-    const { user } = setup();
-
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.click(screen.getByRole('button', { name: /forgot password/i }));
-
-    await waitFor(() => {
-      expect(mockResetPasswordForEmail).toHaveBeenCalledWith(
-        'test@example.com',
-        expect.objectContaining({ redirectTo: expect.stringContaining('/login') }),
-      );
-    });
-    expect(await screen.findByRole('status')).toHaveTextContent(/password reset email sent/i);
-  });
-});
-
-describe('Magic link tab', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  // 1. Clicking "Magic link" tab shows email field and submit button
-  it('shows email field and "Send sign-in link" button when Magic link tab is selected', async () => {
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /magic link/i }));
-
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /send sign-in link/i })).toBeInTheDocument();
-  });
-
-  // 2. Submitting calls signInWithOtp with shouldCreateUser: true
-  it('calls signInWithOtp with shouldCreateUser: true on submit', async () => {
-    mockSignInWithOtp.mockResolvedValueOnce({ error: null });
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /magic link/i }));
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.click(screen.getByRole('button', { name: /send sign-in link/i }));
-
-    await waitFor(() => {
-      expect(mockSignInWithOtp).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        options: { shouldCreateUser: true },
+      expect(mockSignInWithOAuth).toHaveBeenCalledWith({
+        provider: 'google',
+        options: { redirectTo: expect.stringContaining('/auth/callback') },
       });
     });
   });
 
-  // 3. Successful submission shows "Check your inbox" confirmation
-  it('shows "Check your inbox" confirmation on success', async () => {
-    mockSignInWithOtp.mockResolvedValueOnce({ error: null });
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /magic link/i }));
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.click(screen.getByRole('button', { name: /send sign-in link/i }));
-
-    expect(await screen.findByText(/check your inbox for a sign-in link/i)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /send sign-in link/i })).not.toBeInTheDocument();
+  // Cycle 4: error banner visible for known error codes
+  it('shows error banner when URL contains ?error=auth_callback_failed', () => {
+    mockSearchParamsGet.mockReturnValue('auth_callback_failed');
+    setup();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
-  // 4. Error from Supabase shows inline error message
-  it('shows inline error message on Supabase error', async () => {
-    mockSignInWithOtp.mockResolvedValueOnce({ error: { message: 'Email not allowed' } });
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /magic link/i }));
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.click(screen.getByRole('button', { name: /send sign-in link/i }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Email not allowed');
+  it('shows error banner when URL contains ?error=oauth_failed', () => {
+    mockSearchParamsGet.mockReturnValue('oauth_failed');
+    setup();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
-  // 5. Switching to Password tab and back clears magic link confirmation/error state
-  it('clears magic link state when switching to Password tab and back', async () => {
-    mockSignInWithOtp.mockResolvedValueOnce({ error: null });
-    const { user } = setup();
-
-    await user.click(screen.getByRole('button', { name: /magic link/i }));
-    await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.click(screen.getByRole('button', { name: /send sign-in link/i }));
-    await screen.findByText(/check your inbox for a sign-in link/i);
-
-    await user.click(screen.getByRole('button', { name: /^password$/i }));
-    await user.click(screen.getByRole('button', { name: /magic link/i }));
-
-    expect(screen.queryByText(/check your inbox/i)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /send sign-in link/i })).toBeInTheDocument();
+  // Cycle 5: no error banner when no error param
+  it('shows no error banner when URL has no error param', () => {
+    mockSearchParamsGet.mockReturnValue(null);
+    setup();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

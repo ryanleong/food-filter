@@ -31,12 +31,14 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimisation)
+     * Match all request paths EXCEPT:
+     * - _next/static   (Next.js static files)
+     * - _next/image    (Next.js image optimisation)
      * - favicon.ico
-     * - public assets (images, icons, etc.)
+     * - /auth/*        ← CRITICAL: excluded so the OAuth /auth/callback route handler
+     *                    can run before a session exists (PKCE code exchange happens here)
+     * - public assets  (svg, png, jpg, jpeg, gif, webp)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
