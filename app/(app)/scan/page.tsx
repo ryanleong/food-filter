@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ScanInput } from '@/components/ScanInput';
 
 export const metadata: Metadata = {
-  title: 'Scan a Menu | FoodFilter',
+  title: 'Scan | Mind Your Food',
   description: 'Capture or upload a menu photo to prepare it for ingredient analysis.',
 };
 

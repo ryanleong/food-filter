@@ -8,7 +8,7 @@ export default function Dashboard() {
         {/* Hero */}
         <div>
           <h1 className="font-display text-5xl font-bold tracking-tight text-primary leading-tight">
-            FoodFilter
+            Mind Your Food
           </h1>
           <p className="mt-2 text-lg text-muted-foreground font-sans">
             Scan menus. Eat safely.

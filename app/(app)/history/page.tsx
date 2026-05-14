@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { HistoryClient } from '@/app/history/components/HistoryClient';
+import { HistoryClient } from './components/HistoryClient';
 
 export const metadata: Metadata = {
-  title: 'History | FoodFilter',
+  title: 'History | Mind Your Food',
 };
 
 export default function HistoryPage() {

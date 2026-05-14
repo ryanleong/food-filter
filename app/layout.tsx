@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { Fraunces, Outfit } from 'next/font/google';
 import './globals.css';
-import TopBar from '@/components/TopBar';
-import BottomNav from '@/components/BottomNav';
 import { AuthProvider, BlacklistProvider } from '@/app/providers';
 
 const defaultUrl = process.env.VERCEL_URL
@@ -12,12 +9,12 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: 'FoodFilter',
-  description: 'Avoid unwanted ingredients when dining out',
+  title: 'Mind Your Food',
+  description: 'Know before you eat.',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'FoodFilter',
+    title: 'Mind Your Food',
   },
   icons: {
     apple: '/icons/icon-192.png',
@@ -47,15 +44,7 @@ export default function RootLayout({
       <body className={`${fraunces.variable} ${outfit.variable} font-sans antialiased`}>
         <AuthProvider>
           <BlacklistProvider>
-            <Suspense fallback={<div className="sticky top-0 z-50 w-full h-14 border-b border-border bg-card" />}>
-              <TopBar />
-            </Suspense>
-            <main className="pb-16 lg:pb-0">
-              {children}
-            </main>
-            <Suspense fallback={<div className="fixed bottom-0 left-0 right-0 z-50 h-16 border-t border-border bg-card" />}>
-              <BottomNav />
-            </Suspense>
+            {children}
           </BlacklistProvider>
         </AuthProvider>
       </body>

@@ -50,7 +50,7 @@ const TopBar = () => {
         {/* Left: Logo */}
         <div className="flex items-center">
           <Link href="/" className="font-display text-xl font-semibold text-primary tracking-tight">
-            FoodFilter
+            Mind Your Food
           </Link>
         </div>
 

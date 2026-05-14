@@ -9,10 +9,12 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Always redirect from root based on auth state
+  // Root: authenticated users go to dashboard; unauthenticated users see the public landing page
   if (pathname === '/') {
-    const destination = user ? '/dashboard' : '/login';
-    return NextResponse.redirect(new URL(destination, request.url));
+    if (user) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+    return response;
   }
 
   // Redirect unauthenticated users away from protected routes

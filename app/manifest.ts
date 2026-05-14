@@ -2,9 +2,9 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'FoodFilter',
-    short_name: 'FoodFilter',
-    description: 'Filter menus. Eat safely.',
+    name: 'Mind Your Food',
+    short_name: 'Mind Your Food',
+    description: 'Know before you eat.',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

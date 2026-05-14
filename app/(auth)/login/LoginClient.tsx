@@ -35,8 +35,8 @@ export default function LoginClient() {
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4 py-12">
       {/* Brand */}
       <div className="mb-8 text-center">
-        <h1 className="font-display text-4xl font-semibold text-primary tracking-tight">FoodFilter</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Filter menus. Eat safely.</p>
+        <h1 className="font-display text-4xl font-semibold text-primary tracking-tight">Mind Your Food</h1>
+        <p className="mt-2 text-sm text-muted-foreground">Know before you eat.</p>
       </div>
 
       {/* Card */}
