@@ -1,12 +1,12 @@
 import { Suspense } from 'react';
-import TopBar from '@/components/TopBar';
+import { TopBarWithUsage } from '@/components/TopBarWithUsage';
 import BottomNav from '@/components/BottomNav';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Suspense fallback={<div className="sticky top-0 z-50 w-full h-14 border-b border-border bg-card" />}>
-        <TopBar />
+        <TopBarWithUsage />
       </Suspense>
       <main className="pt-14 pb-16 lg:pb-0">
         {children}

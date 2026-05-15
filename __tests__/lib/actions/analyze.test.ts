@@ -10,7 +10,28 @@ const mockGetUser = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
     auth: { getUser: mockGetUser },
+    from: vi.fn().mockReturnValue({
+      insert: vi.fn().mockReturnValue({
+        select: vi.fn().mockReturnValue({
+          single: vi.fn().mockResolvedValue({
+            data: { id: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', created_at: '2026-04-26T12:00:00.000Z' },
+            error: null,
+          }),
+        }),
+      }),
+    }),
   }),
+}));
+
+const mockCanAnalyze = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/subscription-guard', () => ({
+  canAnalyze: mockCanAnalyze,
+}));
+
+const mockIncrementRequestsUsed = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/db/subscriptions', () => ({
+  incrementRequestsUsed: mockIncrementRequestsUsed,
+  getUserSubscription: vi.fn(),
 }));
 
 vi.mock('@/lib/gemini');
@@ -67,6 +88,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockAnalyzeMenu.mockResolvedValue(DISHES);
   mockAddRecord.mockResolvedValue(MOCK_RECORD);
+  mockCanAnalyze.mockResolvedValue({ allowed: true, remaining: 95, resetAt: null });
+  mockIncrementRequestsUsed.mockResolvedValue(undefined);
 });
 
 // ---- Tests ----
@@ -90,16 +113,13 @@ describe('analyzeMenu (Server Action)', () => {
     expect(mockAnalyzeMenu).toHaveBeenCalledOnce();
   });
 
-  it('T3: authenticated call persists scan via addRecord', async () => {
+  it('T3: authenticated call persists scan and increments requests used', async () => {
     mockAuthenticated('user-abc');
 
     await analyzeMenu(fakeFormData());
 
-    expect(mockAddRecord).toHaveBeenCalledOnce();
-    expect(mockAddRecord).toHaveBeenCalledWith('user-abc', {
-      dishes: DISHES,
-      blacklistSnapshot: ['peanuts'],
-    });
+    expect(mockIncrementRequestsUsed).toHaveBeenCalledOnce();
+    expect(mockIncrementRequestsUsed).toHaveBeenCalledWith('user-abc');
   });
 
   it('T4: Gemini failure returns error without calling addRecord', async () => {

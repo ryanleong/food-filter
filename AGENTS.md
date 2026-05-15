@@ -102,6 +102,42 @@ Tests live in `__tests__/` and mirror the source tree.
 - When mocking `lib/supabase/client.ts` or `lib/supabase/server.ts`, mock the whole module with `vi.mock` and return a fake client object. Use `vi.hoisted` for any variables referenced in the factory.
 - Server Actions are just async functions in tests — call them directly, no special setup needed.
 
+## PPR and Suspense (cacheComponents: true)
+
+`next.config.ts` sets `cacheComponents: true`, which enables Partial Prerendering (PPR). PPR statically prerenders a page's shell and streams dynamic content into it. This imposes a hard rule:
+
+**Any async data access (`cookies()`, `headers()`, DB calls, `createClient()` from `lib/supabase/server`) must live inside a `<Suspense>` boundary — never at the top level of a page or layout.**
+
+The symptom of a violation is a build error:
+```
+Error: Route "/some-route": Uncached data was accessed outside of <Suspense>.
+```
+
+The correct pattern for pages that need dynamic data is a **sync outer shell + async inner component**:
+
+```tsx
+// page.tsx — sync, statically renderable
+export default function MyPage({ searchParams }: { searchParams: Promise<...> }) {
+  return (
+    <main>
+      <Suspense fallback={<LoadingSkeleton />}>
+        <MyContent searchParams={searchParams} />
+      </Suspense>
+    </main>
+  );
+}
+
+// Async inner component — all data access lives here, inside the Suspense boundary
+async function MyContent({ searchParams }: { searchParams: Promise<...> }) {
+  const supabase = await createClient(); // safe: inside Suspense
+  // ...
+}
+```
+
+For layouts that need dynamic data (e.g. per-user data for the nav), extract the async part into a dedicated server component and wrap it in `<Suspense>` in the layout — do NOT make the layout itself async. See `components/TopBarWithUsage.tsx` and `app/(app)/layout.tsx` for the established pattern.
+
+`export const dynamic = 'force-dynamic'` is **incompatible** with `cacheComponents: true` and will cause a build error. Do not use it.
+
 ## Plans & Specs
 
 Detailed implementation plans and design specs for each epic are in [docs/plans/](docs/plans/), [docs/specs/](docs/specs/), and [docs/auth/](docs/auth/).

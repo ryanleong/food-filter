@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { analyzeMenu as analyzeMenuWithGemini } from '@/lib/gemini';
+import { canAnalyze } from '@/lib/subscription-guard';
+import { incrementRequestsUsed } from '@/lib/db/subscriptions';
 import type { ScanRecord } from '@/lib/types';
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -19,7 +21,16 @@ export async function analyzeMenu(
     return { success: false, error: 'Unauthorized' };
   }
 
-  // 2. Validate image
+  // 2. Subscription guard
+  const guardResult = await canAnalyze(user.id);
+  if (!guardResult.allowed) {
+    return {
+      success: false,
+      error: guardResult.reason === 'quota-exhausted' ? 'quota-exhausted' : 'subscription-required',
+    };
+  }
+
+  // 3. Validate image
   const imageField = formData.get('image');
   if (
     !imageField ||
@@ -82,6 +93,8 @@ export async function analyzeMenu(
     dishes,
     blacklistSnapshot: blacklist,
   };
+
+  await incrementRequestsUsed(user.id);
 
   return { success: true, record };
 }

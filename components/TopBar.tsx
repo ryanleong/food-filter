@@ -9,7 +9,41 @@ import { deleteAccount } from '@/lib/actions/deleteAccount';
 import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { NAV_ITEMS } from '@/lib/nav';
 
-const TopBar = () => {
+export type UsageProps =
+  | { type: 'none' }
+  | { type: 'superadmin' }
+  | { type: 'subscribed'; remaining: number; resetAt: Date | null; hasStripeCustomer: boolean }
+  | { type: 'exhausted'; resetAt: Date | null; hasStripeCustomer: boolean };
+
+function formatResetDate(date: Date): string {
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function ManageLink() {
+  const [loading, setLoading] = useState(false);
+  async function handleManage() {
+    setLoading(true);
+    const res = await fetch('/api/stripe/portal', { method: 'POST' });
+    const { url } = await res.json();
+    window.location.href = url;
+  }
+  return (
+    <button
+      type="button"
+      onClick={handleManage}
+      disabled={loading}
+      className="underline underline-offset-2 hover:text-foreground transition-colors disabled:opacity-50"
+    >
+      {loading ? 'Loading...' : 'Manage'}
+    </button>
+  );
+}
+
+interface TopBarProps {
+  usageProps?: UsageProps;
+}
+
+const TopBar = ({ usageProps = { type: 'none' } }: TopBarProps) => {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -44,6 +78,38 @@ const TopBar = () => {
     // On success the session is gone; AuthProvider will clear user state
   };
 
+  function renderUsageChip() {
+    if (usageProps.type === 'none') return null;
+
+    if (usageProps.type === 'superadmin') {
+      return (
+        <span className="text-xs text-muted-foreground px-2 py-0.5 rounded bg-muted">Admin</span>
+      );
+    }
+
+    if (usageProps.type === 'subscribed') {
+      return (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{usageProps.remaining} / 200</span>
+          {usageProps.resetAt && <span>· resets {formatResetDate(usageProps.resetAt)}</span>}
+          {usageProps.hasStripeCustomer && <ManageLink />}
+        </div>
+      );
+    }
+
+    if (usageProps.type === 'exhausted') {
+      return (
+        <div className="flex items-center gap-2 text-xs text-destructive">
+          <span>0 / 200 scans left</span>
+          {usageProps.resetAt && <span>· resets {formatResetDate(usageProps.resetAt)}</span>}
+          {usageProps.hasStripeCustomer && <ManageLink />}
+        </div>
+      );
+    }
+
+    return null;
+  }
+
   return (
     <>
       <header className="sticky top-0 z-50 w-full h-14 border-b border-border bg-card grid grid-cols-2 lg:grid-cols-3 items-center px-4">
@@ -76,8 +142,12 @@ const TopBar = () => {
           })}
         </nav>
 
-        {/* Right: Account menu */}
-        <div className="flex items-center justify-end">
+        {/* Right: Usage chip + Account menu */}
+        <div className="flex items-center justify-end gap-3">
+          {/* Usage chip */}
+          {mounted && renderUsageChip()}
+
+          {/* Account dropdown */}
           {mounted && user && (
             <div className="relative" ref={dropdownRef}>
               <button
@@ -143,4 +213,3 @@ const TopBar = () => {
 };
 
 export default TopBar;
-
