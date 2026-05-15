@@ -105,3 +105,17 @@ Tests live in `__tests__/` and mirror the source tree.
 ## Plans & Specs
 
 Detailed implementation plans and design specs for each epic are in [docs/plans/](docs/plans/), [docs/specs/](docs/specs/), and [docs/auth/](docs/auth/).
+
+## Agent skills
+
+### Issue tracker
+
+Issues live as local markdown files under `.scratch/`. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default canonical strings (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`). See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context — one `CONTEXT.md` + `docs/adr/` at repo root. See `docs/agents/domain.md`.
