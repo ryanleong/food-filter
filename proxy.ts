@@ -41,6 +41,6 @@ export const config = {
      *                    can run before a session exists (PKCE code exchange happens here)
      * - public assets  (svg, png, jpg, jpeg, gif, webp)
      */
-    '/((?!_next/static|_next/image|favicon.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|auth/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|webmanifest)$).*)',
   ],
 };
