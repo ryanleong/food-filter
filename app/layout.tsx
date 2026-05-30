@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Fraunces, Outfit } from 'next/font/google';
 import './globals.css';
 import { AuthProvider, BlacklistProvider } from '@/app/providers';
@@ -19,6 +19,10 @@ export const metadata: Metadata = {
   icons: {
     apple: '/icons/icon-192.png',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
 };
 
 const fraunces = Fraunces({
